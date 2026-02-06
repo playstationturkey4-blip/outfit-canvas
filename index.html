@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Outfit Canvas</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+    }
+
+    .toolbar {
+      padding: 10px;
+      background: #ffffff;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .canvas {
+      position: relative;
+      width: 100%;
+      height: calc(100vh - 50px);
+      background: white;
+      overflow: hidden;
+    }
+
+    .item {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      cursor: grab;
+      max-width: 200px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <input type="file" id="upload" accept="image/*">
+  </div>
+
+  <div class="canvas" id="canvas"></div>
+
+  <script>
+    const upload = document.getElementById('upload');
+    const canvas = document.getElementById('canvas');
+
+    upload.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const img = document.createElement('img');
+      img.className = 'item';
+      img.src = URL.createObjectURL(file);
+
+      makeDraggable(img);
+      canvas.appendChild(img);
+    });
+
+    function makeDraggable(el) {
+      let isDragging = false;
+      let startX, startY;
+
+      el.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX - el.offsetLeft;
+        startY = e.clientY - el.offsetTop;
+        el.style.cursor = 'grabbing';
+      });
+
+      document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        el.style.left = e.clientX - startX + 'px';
+        el.style.top = e.clientY - startY + 'px';
+      });
+
+      document.addEventListener('mouseup', () => {
+        isDragging = false;
+        el.style.cursor = 'grab';
+      });
+
+      el.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        let scale = el.scale || 1;
+        scale += e.deltaY * -0.001;
+        scale = Math.min(Math.max(0.2, scale), 3);
+        el.scale = scale;
+        el.style.transform = `translate(-50%, -50%) scale(${scale})`;
+      });
+    }
+  </script>
+
+</body>
+</html>
