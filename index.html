@@ -189,7 +189,7 @@ const canvas=document.getElementById("canvas");
 const viewer=document.getElementById("viewer");
 const fileInput=document.getElementById("fileInput");
 
-/* Навигация */
+/* Переключение экранов */
 function switchScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
@@ -205,6 +205,29 @@ fileInput.onchange=(e)=>{
     reader.readAsDataURL(file);
   }
 };
+
+/* Вставка из буфера (Ctrl+V) */
+document.addEventListener("paste", function(event){
+
+  const items = event.clipboardData.items;
+
+  for(let item of items){
+
+    if(item.type.indexOf("image") !== -1){
+
+      const file = item.getAsFile();
+      const reader = new FileReader();
+
+      reader.onload = function(e){
+        createElement(e.target.result);
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+  }
+
+});
 
 /* Создание элемента */
 function createElement(src){
