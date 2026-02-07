@@ -19,53 +19,51 @@ body {
 }
 
 header {
-  padding: 30px;
+  padding: 25px;
   text-align: center;
   border-bottom: 1px solid #1f1f1f;
 }
 
 .logo {
   font-family: 'Playfair Display', serif;
-  font-size: 42px;
-  letter-spacing: 10px;
+  font-size: 38px;
+  letter-spacing: 8px;
 }
 
 .screen {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 30px;
+  display: none;
+  padding: 25px;
   overflow-y: auto;
+}
+
+.screen.active {
+  display: block;
 }
 
 h2 {
   font-weight: 400;
   letter-spacing: 3px;
-  margin-bottom: 30px;
+  margin-bottom: 25px;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 20px;
-  width: 100%;
-  max-width: 1000px;
 }
 
 .card {
-  background: #1a1a1a;
+  background: #1c1c1c;
   border-radius: 14px;
-  padding: 15px;
-  text-align: center;
-  cursor: pointer;
-  transition: 0.25s ease;
+  padding: 12px;
   position: relative;
+  cursor: pointer;
+  transition: 0.2s ease;
 }
 
 .card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+  transform: translateY(-5px);
 }
 
 .card img {
@@ -77,27 +75,30 @@ h2 {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 32px;
-  font-weight: 300;
+  font-size: 28px;
   border: 1px dashed #444;
-  color: #888;
+  color: #777;
 }
 
-.add-card:hover {
-  background: #222;
+.canvas {
+  height: 65vh;
+  background: #1a1a1a;
+  border-radius: 14px;
+  position: relative;
 }
 
-.delete-btn {
+.canvas img {
   position: absolute;
-  top: 8px;
-  right: 10px;
-  font-size: 12px;
-  cursor: pointer;
-  opacity: 0.6;
+  max-width: 120px;
+  cursor: grab;
 }
 
-.delete-btn:hover {
-  opacity: 1;
+button {
+  padding: 10px 16px;
+  background: white;
+  border: none;
+  cursor: pointer;
+  margin-top: 15px;
 }
 
 .bottom-nav {
@@ -120,7 +121,6 @@ h2 {
 .bottom-nav button.active {
   font-weight: bold;
 }
-
 </style>
 </head>
 
@@ -130,66 +130,129 @@ h2 {
   <div class="logo">FOWOGES</div>
 </header>
 
-<div id="wardrobe" class="screen">
+<!-- ГАРДЕРОБ -->
+<div id="wardrobe" class="screen active">
   <h2>ГАРДЕРОБ</h2>
-  <div class="grid" id="wardrobeGrid">
-    <div class="card add-card" id="addItem">+</div>
-  </div>
+  <div class="grid" id="wardrobeGrid"></div>
+</div>
+
+<!-- СОЗДАТЬ ОБРАЗ -->
+<div id="builder" class="screen">
+  <h2>СОЗДАТЬ ОБРАЗ</h2>
+  <div class="canvas" id="canvas"></div>
+  <button id="saveOutfit">Сохранить образ</button>
+</div>
+
+<!-- МОИ ОБРАЗЫ -->
+<div id="lookbook" class="screen">
+  <h2>МОИ ОБРАЗЫ</h2>
+  <div class="grid" id="outfitGrid"></div>
 </div>
 
 <div class="bottom-nav">
-  <button class="active">ГАРДЕРОБ</button>
+  <button onclick="switchScreen('wardrobe')" class="active">ГАРДЕРОБ</button>
+  <button onclick="switchScreen('builder')">СОЗДАТЬ</button>
+  <button onclick="switchScreen('lookbook')">ОБРАЗЫ</button>
 </div>
 
 <input type="file" id="fileInput" accept="image/*" style="display:none;">
 
 <script>
-const grid = document.getElementById("wardrobeGrid");
-const addBtn = document.getElementById("addItem");
+let wardrobe = JSON.parse(localStorage.getItem("wardrobe")) || [];
+let savedOutfits = JSON.parse(localStorage.getItem("outfits")) || [];
+
+const wardrobeGrid = document.getElementById("wardrobeGrid");
+const outfitGrid = document.getElementById("outfitGrid");
+const canvas = document.getElementById("canvas");
 const fileInput = document.getElementById("fileInput");
 
-let wardrobe = JSON.parse(localStorage.getItem("wardrobe")) || [];
+function switchScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
 
 function renderWardrobe() {
-  grid.innerHTML = '<div class="card add-card" id="addItem">+</div>';
-  wardrobe.forEach((item, index) => {
+  wardrobeGrid.innerHTML = "";
+  
+  const addCard = document.createElement("div");
+  addCard.className = "card add-card";
+  addCard.innerText = "+";
+  addCard.onclick = () => fileInput.click();
+  wardrobeGrid.appendChild(addCard);
+
+  wardrobe.forEach((item) => {
     const card = document.createElement("div");
     card.className = "card";
 
     const img = document.createElement("img");
     img.src = item;
-
-    const del = document.createElement("div");
-    del.className = "delete-btn";
-    del.innerText = "✕";
-    del.onclick = () => {
-      wardrobe.splice(index, 1);
-      localStorage.setItem("wardrobe", JSON.stringify(wardrobe));
-      renderWardrobe();
-    };
+    img.onclick = () => addToCanvas(item);
 
     card.appendChild(img);
-    card.appendChild(del);
-    grid.appendChild(card);
+    wardrobeGrid.appendChild(card);
   });
-
-  document.getElementById("addItem").onclick = () => fileInput.click();
 }
 
-fileInput.addEventListener("change", (e) => {
+function addToCanvas(src) {
+  const img = document.createElement("img");
+  img.src = src;
+  img.style.top = "50%";
+  img.style.left = "50%";
+  img.style.transform = "translate(-50%, -50%)";
+  makeDraggable(img);
+  canvas.appendChild(img);
+  switchScreen("builder");
+}
+
+function makeDraggable(el) {
+  let isDragging = false, offsetX, offsetY;
+
+  el.onmousedown = (e) => {
+    isDragging = true;
+    offsetX = e.clientX - el.offsetLeft;
+    offsetY = e.clientY - el.offsetTop;
+  };
+
+  document.onmousemove = (e) => {
+    if (!isDragging) return;
+    el.style.left = e.clientX - offsetX + "px";
+    el.style.top = e.clientY - offsetY + "px";
+  };
+
+  document.onmouseup = () => isDragging = false;
+}
+
+fileInput.onchange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = function(event) {
+  reader.onload = (event) => {
     wardrobe.push(event.target.result);
     localStorage.setItem("wardrobe", JSON.stringify(wardrobe));
     renderWardrobe();
   };
   reader.readAsDataURL(file);
-});
+};
+
+document.getElementById("saveOutfit").onclick = () => {
+  savedOutfits.push(canvas.innerHTML);
+  localStorage.setItem("outfits", JSON.stringify(savedOutfits));
+  renderOutfits();
+};
+
+function renderOutfits() {
+  outfitGrid.innerHTML = "";
+  savedOutfits.forEach((outfit) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = outfit;
+    outfitGrid.appendChild(card);
+  });
+}
 
 renderWardrobe();
+renderOutfits();
 </script>
 
 </body>
