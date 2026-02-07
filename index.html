@@ -160,8 +160,8 @@ button.primary{
   <div class="controls">
     <button class="primary" onclick="fileInput.click()">Добавить фото</button>
     <button class="primary" onclick="openBgRemoval()">Удаление фона</button>
-    <button class="primary" onclick="deleteActive()">Удалить</button>
-    <button class="primary" onclick="saveOutfit()">Сохранить</button>
+    <button class="primary" onclick="deleteActive()">Удалить элемент</button>
+    <button class="primary" onclick="saveOutfit()">Сохранить образ</button>
     <button class="primary" onclick="clearCanvas()">Очистить</button>
   </div>
 </div>
@@ -206,27 +206,19 @@ fileInput.onchange=(e)=>{
   }
 };
 
-/* Вставка из буфера (Ctrl+V) */
+/* Вставка Ctrl+V */
 document.addEventListener("paste", function(event){
-
   const items = event.clipboardData.items;
-
   for(let item of items){
-
     if(item.type.indexOf("image") !== -1){
-
       const file = item.getAsFile();
       const reader = new FileReader();
-
       reader.onload = function(e){
         createElement(e.target.result);
       };
-
       reader.readAsDataURL(file);
     }
-
   }
-
 });
 
 /* Создание элемента */
@@ -300,15 +292,18 @@ function clearCanvas(){
   canvas.innerHTML="";
 }
 
-/* Сохранение */
+/* Сохранение образа */
 function saveOutfit(){
-  if(canvas.innerHTML.trim()===""){
-    alert("Добавьте элементы");
+
+  const elements=document.querySelectorAll("#canvas .editable");
+
+  if(elements.length===0){
+    alert("Добавьте элементы перед сохранением");
     return;
   }
 
   let outfit=[];
-  document.querySelectorAll("#canvas .editable").forEach(el=>{
+  elements.forEach(el=>{
     outfit.push({
       src:el.querySelector("img").src,
       x:el.dataset.x,
@@ -320,8 +315,14 @@ function saveOutfit(){
 
   savedOutfits.push(outfit);
   localStorage.setItem("outfits",JSON.stringify(savedOutfits));
-  alert("Образ сохранён");
+
+  currentIndex=savedOutfits.length-1;
+
   renderCurrentOutfit();
+
+  switchScreen("lookbook");
+
+  alert("Образ сохранён и добавлен в Образы");
 }
 
 /* Lookbook */
