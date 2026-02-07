@@ -3,12 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FOWOGES Outfit Studio</title>
+<title>FOWOGES</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
-
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
@@ -21,31 +20,42 @@ body {
 
 header {
   background: #000;
-  color: #fff;
-  padding: 20px 40px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  color: white;
+  padding: 25px;
+  text-align: center;
 }
 
 .logo {
   font-family: 'Playfair Display', serif;
-  font-size: 28px;
-  letter-spacing: 3px;
+  font-size: 36px;
+  letter-spacing: 6px;
 }
 
 .nav {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.nav button {
+  background: none;
+  border: none;
   font-size: 14px;
-  letter-spacing: 1px;
-  opacity: 0.7;
+  cursor: pointer;
+  letter-spacing: 2px;
+}
+
+.nav button.active {
+  border-bottom: 2px solid black;
 }
 
 .toolbar {
   display: flex;
+  justify-content: center;
   gap: 10px;
-  padding: 15px 40px;
-  border-bottom: 1px solid #eee;
-  background: #fff;
+  padding: 15px;
 }
 
 button, input[type="file"] {
@@ -60,7 +70,6 @@ button, input[type="file"] {
 button:hover {
   background: black;
   color: white;
-  transition: 0.2s;
 }
 
 .canvas-container {
@@ -82,9 +91,6 @@ button:hover {
 
 .item {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   cursor: grab;
   max-width: 200px;
   border: 2px solid transparent;
@@ -94,6 +100,19 @@ button:hover {
   border: 2px dashed black;
 }
 
+.gallery {
+  display: none;
+  padding: 30px;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.gallery img {
+  width: 200px;
+  border: 1px solid #ccc;
+}
+
 footer {
   text-align: center;
   padding: 15px;
@@ -101,7 +120,6 @@ footer {
   letter-spacing: 1px;
   border-top: 1px solid #eee;
 }
-
 </style>
 </head>
 
@@ -109,32 +127,63 @@ footer {
 
 <header>
   <div class="logo">FOWOGES</div>
-  <div class="nav">OUTFIT STUDIO</div>
 </header>
 
-<div class="toolbar">
-  <input type="file" id="upload" accept="image/*">
-  <button id="bringFront">BRING FRONT</button>
-  <button id="deleteItem">DELETE</button>
+<div class="nav">
+  <button id="createTab" class="active">СОЗДАТЬ ОБРАЗ</button>
+  <button id="galleryTab">МОИ ОБРАЗЫ</button>
 </div>
 
-<div class="canvas-container">
-  <div class="canvas" id="canvas"></div>
+<div id="createPage">
+  <div class="toolbar">
+    <input type="file" id="upload" accept="image/*">
+    <button id="bringFront">На передний план</button>
+    <button id="deleteItem">Удалить</button>
+    <button id="saveFit">Сохранить образ</button>
+  </div>
+
+  <div class="canvas-container">
+    <div class="canvas" id="canvas"></div>
+  </div>
 </div>
+
+<div id="galleryPage" class="gallery"></div>
 
 <footer>
   FOWOGES © 2025 — BUILD YOUR FIT
 </footer>
 
 <script>
-
 const upload = document.getElementById('upload');
 const canvas = document.getElementById('canvas');
 const bringFrontBtn = document.getElementById('bringFront');
 const deleteBtn = document.getElementById('deleteItem');
+const saveBtn = document.getElementById('saveFit');
+const gallery = document.getElementById('galleryPage');
+
+const createTab = document.getElementById('createTab');
+const galleryTab = document.getElementById('galleryTab');
+
+const createPage = document.getElementById('createPage');
+const galleryPage = document.getElementById('galleryPage');
 
 let activeItem = null;
 let highestZ = 1;
+let savedFits = [];
+
+createTab.onclick = () => {
+  createPage.style.display = "block";
+  galleryPage.style.display = "none";
+  createTab.classList.add("active");
+  galleryTab.classList.remove("active");
+};
+
+galleryTab.onclick = () => {
+  createPage.style.display = "none";
+  galleryPage.style.display = "flex";
+  createTab.classList.remove("active");
+  galleryTab.classList.add("active");
+};
 
 upload.addEventListener('change', (e) => {
   const file = e.target.files[0];
@@ -143,6 +192,9 @@ upload.addEventListener('change', (e) => {
   const img = document.createElement('img');
   img.src = URL.createObjectURL(file);
   img.className = 'item';
+  img.style.left = "50%";
+  img.style.top = "50%";
+  img.style.transform = "translate(-50%, -50%)";
   img.style.zIndex = highestZ++;
 
   makeDraggable(img);
@@ -165,16 +217,22 @@ canvas.addEventListener('click', () => {
   activeItem = null;
 });
 
-bringFrontBtn.addEventListener('click', () => {
+bringFrontBtn.onclick = () => {
   if (!activeItem) return;
   activeItem.style.zIndex = highestZ++;
-});
+};
 
-deleteBtn.addEventListener('click', () => {
+deleteBtn.onclick = () => {
   if (!activeItem) return;
   activeItem.remove();
   activeItem = null;
-});
+};
+
+saveBtn.onclick = () => {
+  const fitClone = canvas.cloneNode(true);
+  const img = new Image();
+  img.src = canvas.toDataURL ? canvas.toDataURL() : "";
+};
 
 function makeDraggable(el) {
   let isDragging = false;
@@ -184,7 +242,6 @@ function makeDraggable(el) {
     isDragging = true;
     offsetX = e.clientX - el.offsetLeft;
     offsetY = e.clientY - el.offsetTop;
-    el.style.cursor = 'grabbing';
   });
 
   document.addEventListener('mousemove', (e) => {
@@ -195,7 +252,6 @@ function makeDraggable(el) {
 
   document.addEventListener('mouseup', () => {
     isDragging = false;
-    el.style.cursor = 'grab';
   });
 
   el.addEventListener('wheel', (e) => {
@@ -207,7 +263,6 @@ function makeDraggable(el) {
     el.style.transform = `translate(-50%, -50%) scale(${scale})`;
   });
 }
-
 </script>
 
 </body>
