@@ -189,7 +189,7 @@ const canvas=document.getElementById("canvas");
 const viewer=document.getElementById("viewer");
 const fileInput=document.getElementById("fileInput");
 
-/* Переключение экранов */
+/* Навигация */
 function switchScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
@@ -292,9 +292,8 @@ function clearCanvas(){
   canvas.innerHTML="";
 }
 
-/* Сохранение образа */
+/* Сохранение */
 function saveOutfit(){
-
   const elements=document.querySelectorAll("#canvas .editable");
 
   if(elements.length===0){
@@ -306,10 +305,10 @@ function saveOutfit(){
   elements.forEach(el=>{
     outfit.push({
       src:el.querySelector("img").src,
-      x:el.dataset.x,
-      y:el.dataset.y,
-      scale:el.dataset.scale,
-      rotation:el.dataset.rotation
+      x:parseFloat(el.dataset.x),
+      y:parseFloat(el.dataset.y),
+      scale:parseFloat(el.dataset.scale),
+      rotation:parseFloat(el.dataset.rotation)
     });
   });
 
@@ -317,33 +316,37 @@ function saveOutfit(){
   localStorage.setItem("outfits",JSON.stringify(savedOutfits));
 
   currentIndex=savedOutfits.length-1;
-
   renderCurrentOutfit();
-
   switchScreen("lookbook");
 
-  alert("Образ сохранён и добавлен в Образы");
+  alert("Образ сохранён");
 }
 
-/* Lookbook */
+/* ИСПРАВЛЕННЫЙ LOOKBOOK */
 function renderCurrentOutfit(){
+
   viewer.innerHTML="";
+
   if(savedOutfits.length===0){
     viewer.innerHTML="<p style='color:#777;text-align:center;margin-top:200px;'>Нет образов</p>";
     return;
   }
 
-  let outfit=savedOutfits[currentIndex];
+  const outfit=savedOutfits[currentIndex];
+
+  const scaleFactor=0.45; // фиксированный уменьшенный масштаб
 
   outfit.forEach(item=>{
     const img=document.createElement("img");
     img.src=item.src;
     img.style.position="absolute";
+
     img.style.transform=`
-      translate(${item.x}px,${item.y}px)
-      scale(${item.scale})
+      translate(${item.x * scaleFactor}px,${item.y * scaleFactor}px)
+      scale(${item.scale * scaleFactor})
       rotate(${item.rotation}deg)
     `;
+
     img.style.width="150px";
     viewer.appendChild(img);
   });
@@ -363,7 +366,6 @@ function nextOutfit(){
   renderCurrentOutfit();
 }
 
-/* Кнопка удаления фона */
 function openBgRemoval(){
   window.open("https://www.remove.bg/", "_blank");
 }
