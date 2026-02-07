@@ -1,323 +1,76 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FOWOGES</title>
+/* ============================= */
+/* ===== СОХРАНЕНИЕ ОБРАЗОВ ==== */
+/* ============================= */
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-
-<style>
-body{
-  margin:0;
-  font-family:'Poppins',sans-serif;
-  background:#0e0e0e;
-  color:white;
+if(!localStorage.getItem("outfits")){
+  localStorage.setItem("outfits", JSON.stringify([]));
 }
 
-/* HEADER */
-header{
-  padding:25px;
-  text-align:center;
-  border-bottom:1px solid #1a1a1a;
-}
-
-.logo{
-  font-family:'Playfair Display',serif;
-  font-size:38px;
-  letter-spacing:10px;
-}
-
-/* NAV */
-.nav{
-  display:flex;
-  justify-content:center;
-  gap:35px;
-  padding:15px;
-  border-bottom:1px solid #1a1a1a;
-}
-
-.nav button{
-  background:none;
-  border:none;
-  color:#aaa;
-  font-size:15px;
-  cursor:pointer;
-  transition:0.3s;
-}
-
-.nav button:hover{
-  color:white;
-}
-
-.nav button.active{
-  color:white;
-  font-weight:600;
-}
-
-/* Screens */
-.screen{
-  display:none;
-  padding:40px;
-}
-
-.screen.active{
-  display:block;
-}
-
-/* Главная */
-.hero{
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
-  height:60vh;
-}
-
-.hero h1{
-  font-family:'Playfair Display',serif;
-  font-size:60px;
-  margin:0;
-}
-
-.hero p{
-  margin-top:15px;
-  font-size:18px;
-  color:#aaa;
-}
-
-/* Белый холст */
-.canvas{
-  width:100%;
-  height:60vh;
-  background:white;
-  border-radius:14px;
-  position:relative;
-  overflow:hidden;
-  margin-bottom:20px;
-}
-
-/* Галерея */
-.gallery{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
-  gap:20px;
-}
-
-.outfit-window{
-  height:400px;
-  background:white;
-  border-radius:14px;
-  position:relative;
-  overflow:hidden;
-}
-
-/* Buttons */
-.controls{
-  display:flex;
-  gap:15px;
-  flex-wrap:wrap;
-}
-
-button.primary{
-  padding:12px 20px;
-  background:white;
-  color:black;
-  border:none;
-  border-radius:8px;
-  font-weight:600;
-  cursor:pointer;
-  transition:0.3s;
-}
-
-button.primary:hover{
-  background:#ddd;
-}
-</style>
-</head>
-
-<body>
-
-<header>
-  <div class="logo">FOWOGES</div>
-</header>
-
-<div class="nav">
-  <button onclick="switchScreen('home')" class="active">Главная</button>
-  <button onclick="switchScreen('builder')">Создать</button>
-  <button onclick="switchScreen('lookbook')">Образы</button>
-</div>
-
-<!-- Главная -->
-<div id="home" class="screen active">
-  <div class="hero">
-    <h1>Build Your Identity</h1>
-    <p>Создавай цифровые образы и управляй своим стилем</p>
-  </div>
-</div>
-
-<!-- Создать -->
-<div id="builder" class="screen">
-  <h2>Создать образ</h2>
-
-  <div id="canvas" class="canvas"></div>
-
-  <div class="controls">
-    <button class="primary" onclick="fileInput.click()">Добавить фото</button>
-    <button class="primary" onclick="openBgRemoval()">Удаление фона</button>
-    <button class="primary" onclick="saveOutfit()">Сохранить</button>
-    <button class="primary" onclick="clearCanvas()">Очистить</button>
-  </div>
-</div>
-
-<!-- Образы -->
-<div id="lookbook" class="screen">
-  <h2>Мои образы</h2>
-  <div id="gallery" class="gallery"></div>
-</div>
-
-<input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
-
-<script>
-
-let savedOutfits = JSON.parse(localStorage.getItem("outfits")) || [];
-
-const canvas = document.getElementById("canvas");
-const gallery = document.getElementById("gallery");
-const fileInput = document.getElementById("fileInput");
-
-/* Навигация */
-function switchScreen(id){
-  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-
-  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
-  document.querySelector(`[onclick="switchScreen('${id}')"]`).classList.add("active");
-}
-
-/* Загрузка фото */
-fileInput.addEventListener("change", function(e){
-  for(let file of e.target.files){
-    const reader = new FileReader();
-    reader.onload = function(event){
-      addImage(event.target.result, canvas);
-    };
-    reader.readAsDataURL(file);
-  }
-});
-
-/* Добавить изображение */
-function addImage(src, target){
-
-  const img = document.createElement("img");
-  img.src = src;
-  img.style.width = "120px";
-  img.style.position = "absolute";
-  img.style.left = "50px";
-  img.style.top = "50px";
-  img.style.cursor = "move";
-
-  makeDraggable(img);
-  target.appendChild(img);
-}
-
-/* Перетаскивание */
-function makeDraggable(el){
-
-  let offsetX, offsetY;
-
-  el.onmousedown = function(e){
-    offsetX = e.offsetX;
-    offsetY = e.offsetY;
-
-    document.onmousemove = function(e){
-      el.style.left = (e.pageX - el.parentElement.offsetLeft - offsetX) + "px";
-      el.style.top = (e.pageY - el.parentElement.offsetTop - offsetY) + "px";
-    };
-
-    document.onmouseup = function(){
-      document.onmousemove = null;
-    };
-  };
-
-  /* Масштаб */
-  el.onwheel = function(e){
-    e.preventDefault();
-    let current = parseFloat(el.style.width);
-    current += e.deltaY < 0 ? 10 : -10;
-    if(current < 40) current = 40;
-    if(current > 400) current = 400;
-    el.style.width = current + "px";
-  };
-}
-
-/* Очистить */
-function clearCanvas(){
-  canvas.innerHTML = "";
-}
-
-/* Удаление фона */
-function openBgRemoval(){
-  window.open("https://www.remove.bg/", "_blank");
-}
-
-/* Сохранение */
 function saveOutfit(){
 
-  const elements = canvas.querySelectorAll("img");
+  const canvas = document.getElementById("canvas");
+  const images = canvas.querySelectorAll("img");
 
-  if(elements.length === 0){
+  if(images.length === 0){
     alert("Добавьте элементы перед сохранением");
     return;
   }
 
-  let outfit = [];
+  let outfits = JSON.parse(localStorage.getItem("outfits"));
 
-  elements.forEach(img=>{
-    outfit.push({
+  let newOutfit = [];
+
+  images.forEach(img=>{
+    newOutfit.push({
       src: img.src,
-      left: img.style.left,
-      top: img.style.top,
-      width: img.style.width
+      left: img.style.left || "0px",
+      top: img.style.top || "0px",
+      width: img.style.width || "120px"
     });
   });
 
-  savedOutfits.push(outfit);
-  localStorage.setItem("outfits", JSON.stringify(savedOutfits));
+  outfits.push(newOutfit);
 
-  renderGallery();
-  switchScreen("lookbook");
+  localStorage.setItem("outfits", JSON.stringify(outfits));
+
+  renderOutfits();
 
   alert("Образ сохранён");
 }
 
-/* Галерея */
-function renderGallery(){
+/* ============================= */
+/* ===== ОТОБРАЖЕНИЕ В ОБРАЗАХ */
+/* ============================= */
+
+function renderOutfits(){
+
+  const gallery = document.getElementById("gallery");
+  if(!gallery) return;
 
   gallery.innerHTML = "";
 
-  savedOutfits.forEach((outfit)=>{
+  let outfits = JSON.parse(localStorage.getItem("outfits"));
 
-    const windowDiv = document.createElement("div");
-    windowDiv.className = "outfit-window";
+  outfits.forEach(outfit => {
 
-    outfit.forEach(item=>{
-      addImage(item.src, windowDiv);
+    const box = document.createElement("div");
+    box.className = "outfit-window";
 
-      const img = windowDiv.lastChild;
+    outfit.forEach(item => {
+      const img = document.createElement("img");
+      img.src = item.src;
+      img.style.position = "absolute";
       img.style.left = item.left;
       img.style.top = item.top;
       img.style.width = item.width;
+      box.appendChild(img);
     });
 
-    gallery.appendChild(windowDiv);
+    gallery.appendChild(box);
   });
 }
 
-renderGallery();
-
-</script>
-
-</body>
-</html>
+/* Авто-загрузка при открытии */
+document.addEventListener("DOMContentLoaded", function(){
+  renderOutfits();
+});
