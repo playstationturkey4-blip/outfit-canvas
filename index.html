@@ -43,7 +43,6 @@ header{
   background:none;
   border:none;
   color:#aaa;
-  font-size:14px;
   cursor:pointer;
 }
 
@@ -61,21 +60,6 @@ header{
 
 .screen.active{
   display:block;
-}
-
-.hero{
-  text-align:center;
-  margin-top:80px;
-}
-
-.hero h1{
-  font-size:48px;
-  font-family:'Playfair Display',serif;
-}
-
-.hero p{
-  color:#bbb;
-  margin-top:15px;
 }
 
 .canvas{
@@ -113,22 +97,23 @@ button.primary{
   font-weight:600;
 }
 
-.viewer-wrapper{
-  display:flex;
-  justify-content:center;
-  align-items:center;
+/* ГАЛЕРЕЯ ОБРАЗОВ */
+
+.gallery{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
   gap:20px;
-  margin-top:30px;
 }
 
-.viewer{
-  width:300px;
-  height:500px;
+.outfit-window{
+  width:100%;
+  height:400px;
   background:#1a1a1a;
   border-radius:14px;
   position:relative;
   overflow:hidden;
 }
+
 </style>
 </head>
 
@@ -139,42 +124,28 @@ button.primary{
 </header>
 
 <div class="nav">
-  <button onclick="switchScreen('home')" class="active">Главная</button>
-  <button onclick="switchScreen('builder')">Создать</button>
+  <button onclick="switchScreen('builder')" class="active">Создать</button>
   <button onclick="switchScreen('lookbook')">Образы</button>
 </div>
 
-<!-- Главная -->
-<div id="home" class="screen active">
-  <div class="hero">
-    <h1>Redefine Your Wardrobe</h1>
-    <p>Создавай цифровые образы и управляй стилем.</p>
-  </div>
-</div>
-
-<!-- Создать -->
-<div id="builder" class="screen">
+<!-- СОЗДАТЬ -->
+<div id="builder" class="screen active">
   <h2>Создать образ</h2>
+
   <div class="canvas" id="canvas"></div>
 
   <div class="controls">
     <button class="primary" onclick="fileInput.click()">Добавить фото</button>
-    <button class="primary" onclick="openBgRemoval()">Удаление фона</button>
-    <button class="primary" onclick="deleteActive()">Удалить элемент</button>
-    <button class="primary" onclick="saveOutfit()">Сохранить образ</button>
+    <button class="primary" onclick="deleteActive()">Удалить</button>
+    <button class="primary" onclick="saveOutfit()">Сохранить</button>
     <button class="primary" onclick="clearCanvas()">Очистить</button>
   </div>
 </div>
 
-<!-- Образы -->
+<!-- ОБРАЗЫ -->
 <div id="lookbook" class="screen">
   <h2>Мои образы</h2>
-
-  <div class="viewer-wrapper">
-    <button onclick="prevOutfit()">←</button>
-    <div id="viewer" class="viewer"></div>
-    <button onclick="nextOutfit()">→</button>
-  </div>
+  <div id="gallery" class="gallery"></div>
 </div>
 
 <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
@@ -183,18 +154,15 @@ button.primary{
 
 let activeElement=null;
 let savedOutfits=JSON.parse(localStorage.getItem("outfits"))||[];
-let currentIndex=0;
 
 const canvas=document.getElementById("canvas");
-const viewer=document.getElementById("viewer");
+const gallery=document.getElementById("gallery");
 const fileInput=document.getElementById("fileInput");
 
-/* Навигация */
+/* Переключение */
 function switchScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
-  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
-  document.querySelector(`[onclick="switchScreen('${id}')"]`).classList.add("active");
 }
 
 /* Добавление фото */
@@ -206,50 +174,31 @@ fileInput.onchange=(e)=>{
   }
 };
 
-/* Вставка Ctrl+V */
-document.addEventListener("paste", function(event){
-  const items = event.clipboardData.items;
-  for(let item of items){
-    if(item.type.indexOf("image") !== -1){
-      const file = item.getAsFile();
-      const reader = new FileReader();
-      reader.onload = function(e){
-        createElement(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-});
-
 /* Создание элемента */
-function createElement(src){
+function createElement(src, targetCanvas = canvas){
+
   const el=document.createElement("div");
   el.classList.add("editable");
-  el.dataset.x=100;
-  el.dataset.y=100;
+  el.dataset.x=50;
+  el.dataset.y=50;
   el.dataset.scale=1;
   el.dataset.rotation=0;
-  el.innerHTML=`<img src="${src}" style="width:150px;">`;
+  el.innerHTML=`<img src="${src}" style="width:120px;">`;
+
   updateTransform(el);
-  canvas.appendChild(el);
+
+  targetCanvas.appendChild(el);
   activate(el);
-  makeDraggable(el);
+  makeInteractive(el);
 }
 
 function activate(el){
-  document.querySelectorAll(".editable").forEach(e=>e.classList.remove("active"));
   el.classList.add("active");
   activeElement=el;
 }
 
-canvas.addEventListener("click",(e)=>{
-  if(e.target===canvas){
-    document.querySelectorAll(".editable").forEach(e=>e.classList.remove("active"));
-    activeElement=null;
-  }
-});
+function makeInteractive(el){
 
-function makeDraggable(el){
   interact(el).draggable({
     listeners:{
       move(event){
@@ -260,14 +209,12 @@ function makeDraggable(el){
     }
   });
 
-  el.addEventListener("click",()=>activate(el));
-
   el.addEventListener("wheel",(e)=>{
     e.preventDefault();
     let scale=parseFloat(el.dataset.scale);
     scale += e.deltaY<0 ? 0.1 : -0.1;
     if(scale<0.2) scale=0.2;
-    if(scale>5) scale=5;
+    if(scale>4) scale=4;
     el.dataset.scale=scale;
     updateTransform(el);
   });
@@ -292,12 +239,13 @@ function clearCanvas(){
   canvas.innerHTML="";
 }
 
-/* Сохранение */
+/* СОХРАНЕНИЕ */
 function saveOutfit(){
+
   const elements=document.querySelectorAll("#canvas .editable");
 
   if(elements.length===0){
-    alert("Добавьте элементы перед сохранением");
+    alert("Добавьте элементы");
     return;
   }
 
@@ -315,62 +263,37 @@ function saveOutfit(){
   savedOutfits.push(outfit);
   localStorage.setItem("outfits",JSON.stringify(savedOutfits));
 
-  currentIndex=savedOutfits.length-1;
-  renderCurrentOutfit();
+  renderGallery();
   switchScreen("lookbook");
-
-  alert("Образ сохранён");
 }
 
-/* ИСПРАВЛЕННЫЙ LOOKBOOK */
-function renderCurrentOutfit(){
+/* ГАЛЕРЕЯ */
+function renderGallery(){
 
-  viewer.innerHTML="";
+  gallery.innerHTML="";
 
-  if(savedOutfits.length===0){
-    viewer.innerHTML="<p style='color:#777;text-align:center;margin-top:200px;'>Нет образов</p>";
-    return;
-  }
+  savedOutfits.forEach((outfit,index)=>{
 
-  const outfit=savedOutfits[currentIndex];
+    const windowDiv=document.createElement("div");
+    windowDiv.className="outfit-window";
 
-  const scaleFactor=0.45; // фиксированный уменьшенный масштаб
+    outfit.forEach(item=>{
+      createElement(item.src, windowDiv);
 
-  outfit.forEach(item=>{
-    const img=document.createElement("img");
-    img.src=item.src;
-    img.style.position="absolute";
+      const el=windowDiv.lastChild;
+      el.dataset.x=item.x*0.4;
+      el.dataset.y=item.y*0.4;
+      el.dataset.scale=item.scale*0.4;
+      updateTransform(el);
+    });
 
-    img.style.transform=`
-      translate(${item.x * scaleFactor}px,${item.y * scaleFactor}px)
-      scale(${item.scale * scaleFactor})
-      rotate(${item.rotation}deg)
-    `;
+    gallery.appendChild(windowDiv);
 
-    img.style.width="150px";
-    viewer.appendChild(img);
   });
+
 }
 
-function prevOutfit(){
-  if(savedOutfits.length===0) return;
-  currentIndex--;
-  if(currentIndex<0) currentIndex=savedOutfits.length-1;
-  renderCurrentOutfit();
-}
-
-function nextOutfit(){
-  if(savedOutfits.length===0) return;
-  currentIndex++;
-  if(currentIndex>=savedOutfits.length) currentIndex=0;
-  renderCurrentOutfit();
-}
-
-function openBgRemoval(){
-  window.open("https://www.remove.bg/", "_blank");
-}
-
-renderCurrentOutfit();
+renderGallery();
 
 </script>
 
