@@ -91,11 +91,6 @@ header{
 .editable{
   position:absolute;
   cursor:move;
-  border:2px dashed transparent;
-}
-
-.editable.active{
-  border:2px dashed white;
 }
 
 .controls{
@@ -126,6 +121,15 @@ button.primary{
   border-radius:14px;
   position:relative;
   overflow:hidden;
+  padding:5px;
+}
+
+.outfit-title{
+  position:absolute;
+  top:5px;
+  left:10px;
+  font-size:12px;
+  color:#aaa;
 }
 </style>
 </head>
@@ -142,7 +146,7 @@ button.primary{
   <button onclick="switchScreen('lookbook')">Образы</button>
 </div>
 
-<!-- ГЛАВНАЯ -->
+<!-- Главная -->
 <div id="home" class="screen active">
   <div class="hero">
     <h1>Redefine Your Wardrobe</h1>
@@ -150,7 +154,7 @@ button.primary{
   </div>
 </div>
 
-<!-- СОЗДАТЬ -->
+<!-- Создать -->
 <div id="builder" class="screen">
   <h2>Создать образ</h2>
 
@@ -158,13 +162,12 @@ button.primary{
 
   <div class="controls">
     <button class="primary" onclick="fileInput.click()">Добавить фото</button>
-    <button class="primary" onclick="deleteActive()">Удалить элемент</button>
     <button class="primary" onclick="saveOutfit()">Сохранить</button>
     <button class="primary" onclick="clearCanvas()">Очистить</button>
   </div>
 </div>
 
-<!-- ОБРАЗЫ -->
+<!-- Образы -->
 <div id="lookbook" class="screen">
   <h2>Мои образы</h2>
   <div id="gallery" class="gallery"></div>
@@ -174,14 +177,13 @@ button.primary{
 
 <script>
 
-let activeElement=null;
-let savedOutfits=JSON.parse(localStorage.getItem("outfits"))||[];
+let savedOutfits = JSON.parse(localStorage.getItem("outfits")) || [];
 
-const canvas=document.getElementById("canvas");
-const gallery=document.getElementById("gallery");
-const fileInput=document.getElementById("fileInput");
+const canvas = document.getElementById("canvas");
+const gallery = document.getElementById("gallery");
+const fileInput = document.getElementById("fileInput");
 
-/* Переключение вкладок */
+/* Навигация */
 function switchScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
@@ -190,94 +192,89 @@ function switchScreen(id){
 }
 
 /* Добавление фото */
-fileInput.onchange=(e)=>{
+fileInput.onchange = (e)=>{
   for(let file of e.target.files){
-    const reader=new FileReader();
-    reader.onload=(event)=>createElement(event.target.result, canvas);
+    const reader = new FileReader();
+    reader.onload = (event)=> addImageToCanvas(event.target.result, canvas);
     reader.readAsDataURL(file);
   }
 };
 
 /* Создание элемента */
-function createElement(src, targetCanvas){
+function addImageToCanvas(src, target){
 
-  const el=document.createElement("div");
-  el.classList.add("editable");
-  el.dataset.x=50;
-  el.dataset.y=50;
-  el.dataset.scale=1;
-  el.dataset.rotation=0;
-  el.innerHTML=`<img src="${src}" style="width:120px;">`;
+  const el = document.createElement("div");
+  el.className = "editable";
+  el.dataset.x = 50;
+  el.dataset.y = 50;
+  el.dataset.scale = 1;
+
+  el.innerHTML = `<img src="${src}" style="width:120px;">`;
 
   updateTransform(el);
-  targetCanvas.appendChild(el);
+  target.appendChild(el);
 
-  makeInteractive(el);
+  makeDraggable(el);
 }
 
-function makeInteractive(el){
+/* Перемещение */
+function makeDraggable(el){
 
   interact(el).draggable({
     listeners:{
       move(event){
-        el.dataset.x=parseFloat(el.dataset.x)+event.dx;
-        el.dataset.y=parseFloat(el.dataset.y)+event.dy;
+        el.dataset.x = parseFloat(el.dataset.x) + event.dx;
+        el.dataset.y = parseFloat(el.dataset.y) + event.dy;
         updateTransform(el);
       }
     }
   });
 
-  el.addEventListener("wheel",(e)=>{
+  el.addEventListener("wheel", function(e){
     e.preventDefault();
-    let scale=parseFloat(el.dataset.scale);
-    scale += e.deltaY<0 ? 0.1 : -0.1;
-    if(scale<0.2) scale=0.2;
-    if(scale>4) scale=4;
-    el.dataset.scale=scale;
+    let scale = parseFloat(el.dataset.scale);
+    scale += e.deltaY < 0 ? 0.1 : -0.1;
+    if(scale < 0.2) scale = 0.2;
+    if(scale > 4) scale = 4;
+    el.dataset.scale = scale;
     updateTransform(el);
   });
 }
 
 function updateTransform(el){
-  el.style.transform=`
-    translate(${el.dataset.x}px,${el.dataset.y}px)
+  el.style.transform = `
+    translate(${el.dataset.x}px, ${el.dataset.y}px)
     scale(${el.dataset.scale})
-    rotate(${el.dataset.rotation}deg)
   `;
 }
 
-function deleteActive(){
-  const selected=document.querySelector(".editable.active");
-  if(selected) selected.remove();
-}
-
 function clearCanvas(){
-  canvas.innerHTML="";
+  canvas.innerHTML = "";
 }
 
-/* СОХРАНЕНИЕ */
+/* Сохранение */
 function saveOutfit(){
 
-  const elements=document.querySelectorAll("#canvas .editable");
+  const elements = document.querySelectorAll("#canvas .editable");
 
-  if(elements.length===0){
+  if(elements.length === 0){
     alert("Добавьте элементы перед сохранением");
     return;
   }
 
-  let outfit=[];
+  let outfit = [];
+
   elements.forEach(el=>{
     outfit.push({
-      src:el.querySelector("img").src,
-      x:parseFloat(el.dataset.x),
-      y:parseFloat(el.dataset.y),
-      scale:parseFloat(el.dataset.scale),
-      rotation:parseFloat(el.dataset.rotation)
+      src: el.querySelector("img").src,
+      x: parseFloat(el.dataset.x),
+      y: parseFloat(el.dataset.y),
+      scale: parseFloat(el.dataset.scale)
     });
   });
 
   savedOutfits.push(outfit);
-  localStorage.setItem("outfits",JSON.stringify(savedOutfits));
+  localStorage.setItem("outfits", JSON.stringify(savedOutfits));
 
   renderGallery();
   switchScreen("lookbook");
@@ -285,36 +282,33 @@ function saveOutfit(){
   alert("Образ сохранён");
 }
 
-/* ГАЛЕРЕЯ */
+/* Галерея */
 function renderGallery(){
 
-  gallery.innerHTML="";
+  gallery.innerHTML = "";
 
-  savedOutfits.forEach((outfit,index)=>{
+  savedOutfits.forEach((outfit, index)=>{
 
-    const windowDiv=document.createElement("div");
-    windowDiv.className="outfit-window";
+    const windowDiv = document.createElement("div");
+    windowDiv.className = "outfit-window";
+
+    const title = document.createElement("div");
+    title.className = "outfit-title";
+    title.innerText = "Образ #" + (index+1);
+    windowDiv.appendChild(title);
 
     outfit.forEach(item=>{
+      addImageToCanvas(item.src, windowDiv);
 
-      const el=document.createElement("div");
-      el.classList.add("editable");
-      el.dataset.x=item.x*0.4;
-      el.dataset.y=item.y*0.4;
-      el.dataset.scale=item.scale*0.4;
-      el.dataset.rotation=item.rotation;
-      el.innerHTML=`<img src="${item.src}" style="width:120px;">`;
-
+      const el = windowDiv.lastChild;
+      el.dataset.x = item.x * 0.4;
+      el.dataset.y = item.y * 0.4;
+      el.dataset.scale = item.scale * 0.4;
       updateTransform(el);
-      windowDiv.appendChild(el);
-      makeInteractive(el);
-
     });
 
     gallery.appendChild(windowDiv);
-
   });
-
 }
 
 renderGallery();
