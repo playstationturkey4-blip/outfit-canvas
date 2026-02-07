@@ -1,95 +1,155 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Outfit Canvas</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f2f2f2;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Outfit Builder</title>
 
-    .toolbar {
-      padding: 10px;
-      background: #ffffff;
-      border-bottom: 1px solid #ddd;
-    }
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
 
-    .canvas {
-      position: relative;
-      width: 100%;
-      height: calc(100vh - 50px);
-      background: white;
-      overflow: hidden;
-    }
+.toolbar {
+  background: white;
+  padding: 10px;
+  display: flex;
+  gap: 10px;
+  border-bottom: 1px solid #ddd;
+}
 
-    .item {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      cursor: grab;
-      max-width: 200px;
-    }
-  </style>
+button {
+  padding: 8px 12px;
+  border: none;
+  background: black;
+  color: white;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+.canvas {
+  flex: 1;
+  position: relative;
+  background: white;
+  overflow: hidden;
+}
+
+.item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  max-width: 200px;
+  border: 2px solid transparent;
+}
+
+.item.active {
+  border: 2px dashed black;
+}
+</style>
 </head>
+
 <body>
 
-  <div class="toolbar">
-    <input type="file" id="upload" accept="image/*">
-  </div>
+<div class="toolbar">
+  <input type="file" id="upload" accept="image/*">
+  <button id="bringFront">На передний план</button>
+  <button id="deleteItem">Удалить</button>
+</div>
 
-  <div class="canvas" id="canvas"></div>
+<div class="canvas" id="canvas"></div>
 
-  <script>
-    const upload = document.getElementById('upload');
-    const canvas = document.getElementById('canvas');
+<script>
+const upload = document.getElementById('upload');
+const canvas = document.getElementById('canvas');
+const bringFrontBtn = document.getElementById('bringFront');
+const deleteBtn = document.getElementById('deleteItem');
 
-    upload.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+let activeItem = null;
+let highestZ = 1;
 
-      const img = document.createElement('img');
-      img.className = 'item';
-      img.src = URL.createObjectURL(file);
+upload.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-      makeDraggable(img);
-      canvas.appendChild(img);
-    });
+  const img = document.createElement('img');
+  img.src = URL.createObjectURL(file);
+  img.className = 'item';
+  img.style.zIndex = highestZ++;
 
-    function makeDraggable(el) {
-      let isDragging = false;
-      let startX, startY;
+  makeDraggable(img);
+  makeSelectable(img);
 
-      el.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        startX = e.clientX - el.offsetLeft;
-        startY = e.clientY - el.offsetTop;
-        el.style.cursor = 'grabbing';
-      });
+  canvas.appendChild(img);
+});
 
-      document.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        el.style.left = e.clientX - startX + 'px';
-        el.style.top = e.clientY - startY + 'px';
-      });
+function makeSelectable(el) {
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (activeItem) activeItem.classList.remove('active');
+    activeItem = el;
+    el.classList.add('active');
+  });
+}
 
-      document.addEventListener('mouseup', () => {
-        isDragging = false;
-        el.style.cursor = 'grab';
-      });
+canvas.addEventListener('click', () => {
+  if (activeItem) activeItem.classList.remove('active');
+  activeItem = null;
+});
 
-      el.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        let scale = el.scale || 1;
-        scale += e.deltaY * -0.001;
-        scale = Math.min(Math.max(0.2, scale), 3);
-        el.scale = scale;
-        el.style.transform = `translate(-50%, -50%) scale(${scale})`;
-      });
-    }
-  </script>
+bringFrontBtn.addEventListener('click', () => {
+  if (!activeItem) return;
+  activeItem.style.zIndex = highestZ++;
+});
+
+deleteBtn.addEventListener('click', () => {
+  if (!activeItem) return;
+  activeItem.remove();
+  activeItem = null;
+});
+
+function makeDraggable(el) {
+  let isDragging = false;
+  let offsetX, offsetY;
+
+  el.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    offsetX = e.clientX - el.offsetLeft;
+    offsetY = e.clientY - el.offsetTop;
+    el.style.cursor = 'grabbing';
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    el.style.left = e.clientX - offsetX + 'px';
+    el.style.top = e.clientY - offsetY + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    isDragging = false;
+    el.style.cursor = 'grab';
+  });
+
+  el.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    let scale = el.scale || 1;
+    scale += e.deltaY * -0.001;
+    scale = Math.min(Math.max(0.2, scale), 3);
+    el.scale = scale;
+    el.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  });
+}
+</script>
 
 </body>
 </html>
