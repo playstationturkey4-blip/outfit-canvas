@@ -6,9 +6,7 @@
 <title>FOWOGES</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
 <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
 
 <style>
 body{
@@ -161,6 +159,7 @@ button.primary{
 
   <div class="controls">
     <button class="primary" onclick="fileInput.click()">Добавить фото</button>
+    <button class="primary" onclick="openBgRemoval()">Удаление фона</button>
     <button class="primary" onclick="deleteActive()">Удалить</button>
     <button class="primary" onclick="saveOutfit()">Сохранить</button>
     <button class="primary" onclick="clearCanvas()">Очистить</button>
@@ -190,7 +189,7 @@ const canvas=document.getElementById("canvas");
 const viewer=document.getElementById("viewer");
 const fileInput=document.getElementById("fileInput");
 
-/* Переключение экранов */
+/* Навигация */
 function switchScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
@@ -198,64 +197,16 @@ function switchScreen(id){
   document.querySelector(`[onclick="switchScreen('${id}')"]`).classList.add("active");
 }
 
-/* ===== ML НАСТРОЙКА ===== */
-
-const selfieSegmentation = new SelfieSegmentation({
-  locateFile: (file) => {
-    return `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`;
-  }
-});
-
-selfieSegmentation.setOptions({ modelSelection: 1 });
-selfieSegmentation.onResults(onMLResults);
-
-/* ===== ЗАГРУЗКА ===== */
-
+/* Добавление фото */
 fileInput.onchange=(e)=>{
   for(let file of e.target.files){
-    const img=new Image();
-    img.src=URL.createObjectURL(file);
-    img.onload=()=>selfieSegmentation.send({image:img});
+    const reader=new FileReader();
+    reader.onload=(event)=>createElement(event.target.result);
+    reader.readAsDataURL(file);
   }
 };
 
-/* ===== ML ОБРАБОТКА ===== */
-
-function onMLResults(results){
-
-  const tempCanvas=document.createElement("canvas");
-  const ctx=tempCanvas.getContext("2d");
-
-  tempCanvas.width=results.image.width;
-  tempCanvas.height=results.image.height;
-
-  ctx.drawImage(results.image,0,0);
-
-  const imageData=ctx.getImageData(0,0,tempCanvas.width,tempCanvas.height);
-
-  const maskCanvas=document.createElement("canvas");
-  const maskCtx=maskCanvas.getContext("2d");
-
-  maskCanvas.width=tempCanvas.width;
-  maskCanvas.height=tempCanvas.height;
-  maskCtx.drawImage(results.segmentationMask,0,0,tempCanvas.width,tempCanvas.height);
-
-  const maskData=maskCtx.getImageData(0,0,tempCanvas.width,tempCanvas.height);
-
-  for(let i=0;i<imageData.data.length;i+=4){
-    const alpha=maskData.data[i];
-    if(alpha<128){
-      imageData.data[i+3]=0;
-    }
-  }
-
-  ctx.putImageData(imageData,0,0);
-
-  createElement(tempCanvas.toDataURL("image/png"));
-}
-
-/* ===== СОЗДАНИЕ ЭЛЕМЕНТА ===== */
-
+/* Создание элемента */
 function createElement(src){
   const el=document.createElement("div");
   el.classList.add("editable");
@@ -326,8 +277,7 @@ function clearCanvas(){
   canvas.innerHTML="";
 }
 
-/* ===== СОХРАНЕНИЕ ===== */
-
+/* Сохранение */
 function saveOutfit(){
   if(canvas.innerHTML.trim()===""){
     alert("Добавьте элементы");
@@ -351,8 +301,7 @@ function saveOutfit(){
   renderCurrentOutfit();
 }
 
-/* ===== LOOKBOOK ===== */
-
+/* Lookbook */
 function renderCurrentOutfit(){
   viewer.innerHTML="";
   if(savedOutfits.length===0){
@@ -388,6 +337,11 @@ function nextOutfit(){
   currentIndex++;
   if(currentIndex>=savedOutfits.length) currentIndex=0;
   renderCurrentOutfit();
+}
+
+/* Кнопка удаления фона */
+function openBgRemoval(){
+  window.open("https://www.remove.bg/", "_blank");
 }
 
 renderCurrentOutfit();
