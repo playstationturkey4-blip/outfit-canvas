@@ -8,11 +8,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
-
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
-  background: #111;
+  background: #0f0f0f;
   color: white;
   display: flex;
   flex-direction: column;
@@ -20,60 +19,93 @@ body {
 }
 
 header {
+  padding: 30px;
   text-align: center;
-  padding: 25px;
-  background: #111;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid #1f1f1f;
 }
 
 .logo {
   font-family: 'Playfair Display', serif;
-  font-size: 34px;
-  letter-spacing: 6px;
+  font-size: 42px;
+  letter-spacing: 10px;
 }
 
 .screen {
   flex: 1;
-  display: none;
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px;
   overflow-y: auto;
 }
 
-.screen.active {
-  display: block;
+h2 {
+  font-weight: 400;
+  letter-spacing: 3px;
+  margin-bottom: 30px;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 1000px;
 }
 
 .card {
   background: #1a1a1a;
-  padding: 10px;
-  border-radius: 8px;
+  border-radius: 14px;
+  padding: 15px;
   text-align: center;
   cursor: pointer;
+  transition: 0.25s ease;
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
 }
 
 .card img {
   width: 100%;
+  border-radius: 10px;
 }
 
-.canvas {
-  height: 70vh;
-  background: #1a1a1a;
-  border-radius: 10px;
-  position: relative;
+.add-card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 32px;
+  font-weight: 300;
+  border: 1px dashed #444;
+  color: #888;
+}
+
+.add-card:hover {
+  background: #222;
+}
+
+.delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.delete-btn:hover {
+  opacity: 1;
 }
 
 .bottom-nav {
   display: flex;
   justify-content: space-around;
-  background: #111;
-  border-top: 1px solid #222;
-  padding: 15px 0;
+  padding: 18px 0;
+  border-top: 1px solid #1f1f1f;
+  background: #0f0f0f;
 }
 
 .bottom-nav button {
@@ -86,7 +118,6 @@ header {
 }
 
 .bottom-nav button.active {
-  opacity: 1;
   font-weight: bold;
 }
 
@@ -99,36 +130,66 @@ header {
   <div class="logo">FOWOGES</div>
 </header>
 
-<div id="wardrobe" class="screen active">
-  <h2>Гардероб</h2>
+<div id="wardrobe" class="screen">
+  <h2>ГАРДЕРОБ</h2>
   <div class="grid" id="wardrobeGrid">
-    <div class="card">+ Добавить вещь</div>
+    <div class="card add-card" id="addItem">+</div>
   </div>
 </div>
 
-<div id="builder" class="screen">
-  <h2>Создать образ</h2>
-  <div class="canvas"></div>
-</div>
-
-<div id="lookbook" class="screen">
-  <h2>Мои образы</h2>
-  <div class="grid"></div>
-</div>
-
 <div class="bottom-nav">
-  <button onclick="switchScreen('wardrobe')" class="active">ГАРДЕРОБ</button>
-  <button onclick="switchScreen('builder')">СОЗДАТЬ</button>
-  <button onclick="switchScreen('lookbook')">ОБРАЗЫ</button>
+  <button class="active">ГАРДЕРОБ</button>
 </div>
+
+<input type="file" id="fileInput" accept="image/*" style="display:none;">
 
 <script>
-function switchScreen(screenId) {
-  document.querySelectorAll('.screen').forEach(screen => {
-    screen.classList.remove('active');
+const grid = document.getElementById("wardrobeGrid");
+const addBtn = document.getElementById("addItem");
+const fileInput = document.getElementById("fileInput");
+
+let wardrobe = JSON.parse(localStorage.getItem("wardrobe")) || [];
+
+function renderWardrobe() {
+  grid.innerHTML = '<div class="card add-card" id="addItem">+</div>';
+  wardrobe.forEach((item, index) => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    const img = document.createElement("img");
+    img.src = item;
+
+    const del = document.createElement("div");
+    del.className = "delete-btn";
+    del.innerText = "✕";
+    del.onclick = () => {
+      wardrobe.splice(index, 1);
+      localStorage.setItem("wardrobe", JSON.stringify(wardrobe));
+      renderWardrobe();
+    };
+
+    card.appendChild(img);
+    card.appendChild(del);
+    grid.appendChild(card);
   });
-  document.getElementById(screenId).classList.add('active');
+
+  document.getElementById("addItem").onclick = () => fileInput.click();
 }
+
+fileInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    wardrobe.push(event.target.result);
+    localStorage.setItem("wardrobe", JSON.stringify(wardrobe));
+    renderWardrobe();
+  };
+  reader.readAsDataURL(file);
+});
+
+renderWardrobe();
 </script>
 
 </body>
