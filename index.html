@@ -3,43 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Outfit Builder</title>
+<title>FOWOGES Outfit Studio</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
+
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f4f4f4;
+  font-family: 'Inter', sans-serif;
+  background: #ffffff;
+  color: #000;
   display: flex;
   flex-direction: column;
   height: 100vh;
 }
 
-.toolbar {
-  background: white;
-  padding: 10px;
+header {
+  background: #000;
+  color: #fff;
+  padding: 20px 40px;
   display: flex;
-  gap: 10px;
-  border-bottom: 1px solid #ddd;
+  justify-content: space-between;
+  align-items: center;
 }
 
-button {
-  padding: 8px 12px;
-  border: none;
-  background: black;
-  color: white;
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  letter-spacing: 3px;
+}
+
+.nav {
+  font-size: 14px;
+  letter-spacing: 1px;
+  opacity: 0.7;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 15px 40px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+}
+
+button, input[type="file"] {
+  border: 1px solid black;
+  background: white;
+  padding: 8px 14px;
   cursor: pointer;
-  border-radius: 6px;
+  font-size: 13px;
+  letter-spacing: 1px;
 }
 
 button:hover {
-  opacity: 0.8;
+  background: black;
+  color: white;
+  transition: 0.2s;
+}
+
+.canvas-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f8f8f8;
 }
 
 .canvas {
-  flex: 1;
-  position: relative;
+  width: 80%;
+  height: 80%;
   background: white;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
   overflow: hidden;
 }
 
@@ -56,20 +93,41 @@ button:hover {
 .item.active {
   border: 2px dashed black;
 }
+
+footer {
+  text-align: center;
+  padding: 15px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  border-top: 1px solid #eee;
+}
+
 </style>
 </head>
 
 <body>
 
+<header>
+  <div class="logo">FOWOGES</div>
+  <div class="nav">OUTFIT STUDIO</div>
+</header>
+
 <div class="toolbar">
   <input type="file" id="upload" accept="image/*">
-  <button id="bringFront">На передний план</button>
-  <button id="deleteItem">Удалить</button>
+  <button id="bringFront">BRING FRONT</button>
+  <button id="deleteItem">DELETE</button>
 </div>
 
-<div class="canvas" id="canvas"></div>
+<div class="canvas-container">
+  <div class="canvas" id="canvas"></div>
+</div>
+
+<footer>
+  FOWOGES © 2025 — BUILD YOUR FIT
+</footer>
 
 <script>
+
 const upload = document.getElementById('upload');
 const canvas = document.getElementById('canvas');
 const bringFrontBtn = document.getElementById('bringFront');
@@ -149,6 +207,7 @@ function makeDraggable(el) {
     el.style.transform = `translate(-50%, -50%) scale(${scale})`;
   });
 }
+
 </script>
 
 </body>
