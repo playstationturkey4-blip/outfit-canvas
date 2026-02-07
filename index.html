@@ -6,69 +6,119 @@
 <title>FOWOGES</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
 <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 
 <style>
 
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: #0f0f0f;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  background:#0f0f0f;
+  color:white;
+  display:flex;
+  flex-direction:column;
+  height:100vh;
 }
 
-header {
-  padding: 20px;
-  text-align: center;
-  border-bottom: 1px solid #1f1f1f;
+header{
+  padding:20px;
+  text-align:center;
+  border-bottom:1px solid #1f1f1f;
 }
 
-.logo {
-  font-family: 'Playfair Display', serif;
-  font-size: 36px;
-  letter-spacing: 8px;
+.logo{
+  font-family:'Playfair Display',serif;
+  font-size:36px;
+  letter-spacing:8px;
 }
 
-.screen {
-  flex: 1;
-  display: block;
-  padding: 20px;
+/* Навигация */
+
+.nav{
+  display:flex;
+  justify-content:center;
+  gap:25px;
+  padding:10px;
+  border-bottom:1px solid #1f1f1f;
 }
 
-.canvas {
-  width: 100%;
-  height: 65vh;
-  background: #1a1a1a;
-  border-radius: 14px;
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 20px;
+.nav button{
+  background:none;
+  border:none;
+  color:#aaa;
+  font-size:14px;
+  cursor:pointer;
 }
 
-.editable {
-  position: absolute;
-  border: 2px dashed transparent;
+.nav button.active{
+  color:white;
+  font-weight:600;
 }
 
-.editable.active {
-  border: 2px dashed white;
+/* Экраны */
+
+.screen{
+  flex:1;
+  display:none;
+  padding:20px;
+  overflow:auto;
 }
 
-.controls {
-  display: flex;
-  gap: 10px;
+.screen.active{
+  display:block;
 }
 
-button {
-  padding: 10px 16px;
-  background: white;
-  border: none;
-  color: black;
-  cursor: pointer;
+/* Главная */
+
+.hero{
+  text-align:center;
+  margin-top:80px;
+}
+
+.hero h1{
+  font-size:50px;
+  font-family:'Playfair Display',serif;
+}
+
+.hero p{
+  color:#bbb;
+  margin-top:15px;
+}
+
+/* Canvas */
+
+.canvas{
+  width:100%;
+  height:60vh;
+  background:#1a1a1a;
+  border-radius:14px;
+  position:relative;
+  overflow:hidden;
+  margin-bottom:15px;
+}
+
+.editable{
+  position:absolute;
+  cursor:move;
+  border:2px dashed transparent;
+}
+
+.editable.active{
+  border:2px dashed white;
+}
+
+.controls{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+button.primary{
+  padding:10px 16px;
+  background:white;
+  color:black;
+  border:none;
+  cursor:pointer;
 }
 
 </style>
@@ -80,115 +130,183 @@ button {
   <div class="logo">FOWOGES</div>
 </header>
 
-<div class="screen">
+<div class="nav">
+  <button onclick="switchScreen('home')" class="active">Главная</button>
+  <button onclick="switchScreen('builder')">Создать</button>
+  <button onclick="switchScreen('lookbook')">Образы</button>
+</div>
 
+<!-- Главная -->
+<div id="home" class="screen active">
+  <div class="hero">
+    <h1>Redefine Your Wardrobe</h1>
+    <p>Создавай цифровые образы и управляй стилем.</p>
+  </div>
+</div>
+
+<!-- Создать -->
+<div id="builder" class="screen">
   <h2>Создать образ</h2>
 
   <div class="canvas" id="canvas"></div>
 
   <div class="controls">
-    <button onclick="fileInput.click()">Добавить файлы</button>
-    <button onclick="saveOutfit()">Сохранить образ</button>
-    <button onclick="clearCanvas()">Очистить</button>
+    <button class="primary" onclick="fileInput.click()">Добавить файлы</button>
+    <button class="primary" onclick="deleteActive()">Удалить</button>
+    <button class="primary" onclick="saveOutfit()">Сохранить</button>
+    <button class="primary" onclick="clearCanvas()">Очистить</button>
   </div>
+</div>
 
+<!-- Образы -->
+<div id="lookbook" class="screen">
+  <h2>Мои образы</h2>
+  <div id="outfitGrid"></div>
 </div>
 
 <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
 
 <script>
 
-const canvas = document.getElementById("canvas");
-const fileInput = document.getElementById("fileInput");
+let activeElement=null;
+let savedOutfits=JSON.parse(localStorage.getItem("outfits"))||[];
 
-let savedOutfits = JSON.parse(localStorage.getItem("outfits")) || [];
+const canvas=document.getElementById("canvas");
+const fileInput=document.getElementById("fileInput");
+const outfitGrid=document.getElementById("outfitGrid");
 
-fileInput.onchange = (e) => {
-  const files = e.target.files;
+function switchScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
+  document.querySelector(`[onclick="switchScreen('${id}')"]`).classList.add("active");
+}
 
-  for (let file of files) {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      createEditableImage(event.target.result);
+/* Создание элемента */
+
+fileInput.onchange=(e)=>{
+  for(let file of e.target.files){
+    const reader=new FileReader();
+    reader.onload=(event)=>{
+      createElement(event.target.result);
     };
     reader.readAsDataURL(file);
   }
 };
 
-function createEditableImage(src) {
+function createElement(src){
 
-  const wrapper = document.createElement("div");
-  wrapper.classList.add("editable");
-  wrapper.style.left = "100px";
-  wrapper.style.top = "100px";
-  wrapper.dataset.x = 0;
-  wrapper.dataset.y = 0;
+  const el=document.createElement("div");
+  el.classList.add("editable");
 
-  const img = document.createElement("img");
-  img.src = src;
-  img.style.width = "120px";
-  img.style.display = "block";
+  el.dataset.x=100;
+  el.dataset.y=100;
+  el.dataset.scale=1;
+  el.dataset.rotation=0;
 
-  wrapper.appendChild(img);
-  canvas.appendChild(wrapper);
+  el.innerHTML=`<img src="${src}" style="width:150px;display:block;">`;
 
-  activateElement(wrapper);
-
+  updateTransform(el);
+  canvas.appendChild(el);
+  activate(el);
+  makeDraggable(el);
 }
 
-function activateElement(el) {
+/* Активация */
 
-  document.querySelectorAll(".editable").forEach(e => e.classList.remove("active"));
+function activate(el){
+  document.querySelectorAll(".editable").forEach(e=>e.classList.remove("active"));
   el.classList.add("active");
-
-  interact(el)
-    .draggable({
-      listeners: {
-        move(event) {
-          let target = event.target;
-          let x = (parseFloat(target.dataset.x) || 0) + event.dx;
-          let y = (parseFloat(target.dataset.y) || 0) + event.dy;
-
-          target.style.transform = `translate(${x}px, ${y}px)`;
-          target.dataset.x = x;
-          target.dataset.y = y;
-        }
-      }
-    })
-    .resizable({
-      edges: { left: true, right: true, bottom: true, top: true },
-      listeners: {
-        move(event) {
-          let target = event.target;
-          let x = parseFloat(target.dataset.x) || 0;
-          let y = parseFloat(target.dataset.y) || 0;
-
-          target.style.width = event.rect.width + "px";
-          target.style.height = event.rect.height + "px";
-
-          x += event.deltaRect.left;
-          y += event.deltaRect.top;
-
-          target.style.transform = `translate(${x}px, ${y}px)`;
-
-          target.dataset.x = x;
-          target.dataset.y = y;
-        }
-      }
-    });
-
-  el.onclick = () => activateElement(el);
+  activeElement=el;
 }
 
-function saveOutfit() {
+canvas.addEventListener("click",(e)=>{
+  if(e.target===canvas){
+    document.querySelectorAll(".editable").forEach(e=>e.classList.remove("active"));
+    activeElement=null;
+  }
+});
+
+/* Drag */
+
+function makeDraggable(el){
+  interact(el).draggable({
+    listeners:{
+      move(event){
+        el.dataset.x=parseFloat(el.dataset.x)+event.dx;
+        el.dataset.y=parseFloat(el.dataset.y)+event.dy;
+        updateTransform(el);
+      }
+    }
+  });
+
+  el.addEventListener("click",()=>activate(el));
+
+  /* Колесо мыши — масштаб */
+  el.addEventListener("wheel",(e)=>{
+    e.preventDefault();
+    let scale=parseFloat(el.dataset.scale);
+    scale += e.deltaY<0 ? 0.1 : -0.1;
+    if(scale<0.2) scale=0.2;
+    if(scale>5) scale=5;
+    el.dataset.scale=scale;
+    updateTransform(el);
+  });
+}
+
+/* Обновление трансформации */
+
+function updateTransform(el){
+  el.style.transform=`
+    translate(${el.dataset.x}px,${el.dataset.y}px)
+    scale(${el.dataset.scale})
+    rotate(${el.dataset.rotation}deg)
+  `;
+}
+
+/* Удаление */
+
+function deleteActive(){
+  if(activeElement){
+    activeElement.remove();
+    activeElement=null;
+  }
+}
+
+/* Очистка */
+
+function clearCanvas(){
+  canvas.innerHTML="";
+}
+
+/* Сохранение */
+
+function saveOutfit(){
+  if(canvas.innerHTML.trim()===""){
+    alert("Добавьте элементы");
+    return;
+  }
   savedOutfits.push(canvas.innerHTML);
-  localStorage.setItem("outfits", JSON.stringify(savedOutfits));
-  alert("Образ сохранён!");
+  localStorage.setItem("outfits",JSON.stringify(savedOutfits));
+  renderOutfits();
+  alert("Сохранено");
 }
 
-function clearCanvas() {
-  canvas.innerHTML = "";
+/* Отображение */
+
+function renderOutfits(){
+  outfitGrid.innerHTML="";
+  savedOutfits.forEach(html=>{
+    const div=document.createElement("div");
+    div.innerHTML=html;
+    div.style.marginBottom="20px";
+    div.style.background="#1a1a1a";
+    div.style.padding="10px";
+    outfitGrid.appendChild(div);
+  });
 }
+
+renderOutfits();
 
 </script>
 
