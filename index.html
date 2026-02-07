@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FOWOGES</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
 body{
@@ -14,9 +13,6 @@ body{
   font-family:'Inter',sans-serif;
   background:#0f0f0f;
   color:white;
-  display:flex;
-  flex-direction:column;
-  height:100vh;
 }
 
 header{
@@ -35,7 +31,7 @@ header{
   display:flex;
   justify-content:center;
   gap:25px;
-  padding:10px;
+  padding:15px;
   border-bottom:1px solid #1f1f1f;
 }
 
@@ -43,8 +39,8 @@ header{
   background:none;
   border:none;
   color:#aaa;
-  cursor:pointer;
   font-size:14px;
+  cursor:pointer;
 }
 
 .nav button.active{
@@ -53,59 +49,23 @@ header{
 }
 
 .screen{
-  flex:1;
   display:none;
-  padding:20px;
-  overflow:auto;
+  padding:30px;
 }
 
 .screen.active{
   display:block;
 }
 
-.hero{
-  text-align:center;
-  margin-top:80px;
-}
-
-.hero h1{
-  font-size:48px;
-  font-family:'Playfair Display',serif;
-}
-
-.hero p{
-  color:#bbb;
-  margin-top:15px;
-}
-
+/* БЕЛЫЙ ХОЛСТ */
 .canvas{
   width:100%;
   height:60vh;
-  background:#1a1a1a;
+  background:white;
   border-radius:14px;
   position:relative;
   overflow:hidden;
-  margin-bottom:15px;
-}
-
-.editable{
-  position:absolute;
-  cursor:move;
-}
-
-.controls{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-button.primary{
-  padding:10px 16px;
-  background:white;
-  color:black;
-  border:none;
-  cursor:pointer;
-  font-weight:600;
+  margin-bottom:20px;
 }
 
 /* Галерея */
@@ -117,19 +77,31 @@ button.primary{
 
 .outfit-window{
   height:400px;
-  background:#1a1a1a;
+  background:white;
   border-radius:14px;
   position:relative;
   overflow:hidden;
-  padding:5px;
 }
 
-.outfit-title{
-  position:absolute;
-  top:5px;
-  left:10px;
-  font-size:12px;
-  color:#aaa;
+/* Кнопки */
+.controls{
+  display:flex;
+  gap:15px;
+  flex-wrap:wrap;
+}
+
+button.primary{
+  padding:10px 18px;
+  background:white;
+  color:black;
+  border:none;
+  font-weight:600;
+  cursor:pointer;
+  border-radius:6px;
+}
+
+h2{
+  margin-bottom:20px;
 }
 </style>
 </head>
@@ -148,17 +120,15 @@ button.primary{
 
 <!-- Главная -->
 <div id="home" class="screen active">
-  <div class="hero">
-    <h1>Redefine Your Wardrobe</h1>
-    <p>Создавай цифровые образы и управляй стилем.</p>
-  </div>
+  <h2>Добро пожаловать</h2>
+  <p>Создавай цифровые образы и управляй стилем.</p>
 </div>
 
 <!-- Создать -->
 <div id="builder" class="screen">
   <h2>Создать образ</h2>
 
-  <div class="canvas" id="canvas"></div>
+  <div id="canvas" class="canvas"></div>
 
   <div class="controls">
     <button class="primary" onclick="fileInput.click()">Добавить фото</button>
@@ -183,79 +153,80 @@ const canvas = document.getElementById("canvas");
 const gallery = document.getElementById("gallery");
 const fileInput = document.getElementById("fileInput");
 
-/* Навигация */
+/* Переключение вкладок */
 function switchScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
+
   document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
   document.querySelector(`[onclick="switchScreen('${id}')"]`).classList.add("active");
 }
 
-/* Добавление фото */
-fileInput.onchange = (e)=>{
+/* Загрузка фото */
+fileInput.addEventListener("change", function(e){
   for(let file of e.target.files){
     const reader = new FileReader();
-    reader.onload = (event)=> addImageToCanvas(event.target.result, canvas);
+    reader.onload = function(event){
+      addImage(event.target.result, canvas);
+    };
     reader.readAsDataURL(file);
   }
-};
+});
 
-/* Создание элемента */
-function addImageToCanvas(src, target){
+/* Добавление изображения */
+function addImage(src, target){
 
-  const el = document.createElement("div");
-  el.className = "editable";
-  el.dataset.x = 50;
-  el.dataset.y = 50;
-  el.dataset.scale = 1;
+  const img = document.createElement("img");
+  img.src = src;
+  img.style.width = "120px";
+  img.style.position = "absolute";
+  img.style.left = "50px";
+  img.style.top = "50px";
+  img.style.cursor = "move";
 
-  el.innerHTML = `<img src="${src}" style="width:120px;">`;
-
-  updateTransform(el);
-  target.appendChild(el);
-
-  makeDraggable(el);
+  makeDraggable(img);
+  target.appendChild(img);
 }
 
-/* Перемещение */
+/* Перетаскивание */
 function makeDraggable(el){
 
-  interact(el).draggable({
-    listeners:{
-      move(event){
-        el.dataset.x = parseFloat(el.dataset.x) + event.dx;
-        el.dataset.y = parseFloat(el.dataset.y) + event.dy;
-        updateTransform(el);
-      }
-    }
-  });
+  let offsetX, offsetY;
 
-  el.addEventListener("wheel", function(e){
+  el.onmousedown = function(e){
+    offsetX = e.offsetX;
+    offsetY = e.offsetY;
+
+    document.onmousemove = function(e){
+      el.style.left = (e.pageX - el.parentElement.offsetLeft - offsetX) + "px";
+      el.style.top = (e.pageY - el.parentElement.offsetTop - offsetY) + "px";
+    };
+
+    document.onmouseup = function(){
+      document.onmousemove = null;
+    };
+  };
+
+  /* Масштаб колесом */
+  el.onwheel = function(e){
     e.preventDefault();
-    let scale = parseFloat(el.dataset.scale);
-    scale += e.deltaY < 0 ? 0.1 : -0.1;
-    if(scale < 0.2) scale = 0.2;
-    if(scale > 4) scale = 4;
-    el.dataset.scale = scale;
-    updateTransform(el);
-  });
+    let current = parseFloat(el.style.width);
+    current += e.deltaY < 0 ? 10 : -10;
+    if(current < 40) current = 40;
+    if(current > 400) current = 400;
+    el.style.width = current + "px";
+  };
 }
 
-function updateTransform(el){
-  el.style.transform = `
-    translate(${el.dataset.x}px, ${el.dataset.y}px)
-    scale(${el.dataset.scale})
-  `;
-}
-
+/* Очистить */
 function clearCanvas(){
   canvas.innerHTML = "";
 }
 
-/* Сохранение */
+/* СОХРАНЕНИЕ */
 function saveOutfit(){
 
-  const elements = document.querySelectorAll("#canvas .editable");
+  const elements = canvas.querySelectorAll("img");
 
   if(elements.length === 0){
     alert("Добавьте элементы перед сохранением");
@@ -264,12 +235,12 @@ function saveOutfit(){
 
   let outfit = [];
 
-  elements.forEach(el=>{
+  elements.forEach(img=>{
     outfit.push({
-      src: el.querySelector("img").src,
-      x: parseFloat(el.dataset.x),
-      y: parseFloat(el.dataset.y),
-      scale: parseFloat(el.dataset.scale)
+      src: img.src,
+      left: img.style.left,
+      top: img.style.top,
+      width: img.style.width
     });
   });
 
@@ -287,24 +258,18 @@ function renderGallery(){
 
   gallery.innerHTML = "";
 
-  savedOutfits.forEach((outfit, index)=>{
+  savedOutfits.forEach((outfit)=>{
 
     const windowDiv = document.createElement("div");
     windowDiv.className = "outfit-window";
 
-    const title = document.createElement("div");
-    title.className = "outfit-title";
-    title.innerText = "Образ #" + (index+1);
-    windowDiv.appendChild(title);
-
     outfit.forEach(item=>{
-      addImageToCanvas(item.src, windowDiv);
+      addImage(item.src, windowDiv);
 
-      const el = windowDiv.lastChild;
-      el.dataset.x = item.x * 0.4;
-      el.dataset.y = item.y * 0.4;
-      el.dataset.scale = item.scale * 0.4;
-      updateTransform(el);
+      const img = windowDiv.lastChild;
+      img.style.left = item.left;
+      img.style.top = item.top;
+      img.style.width = item.width;
     });
 
     gallery.appendChild(windowDiv);
