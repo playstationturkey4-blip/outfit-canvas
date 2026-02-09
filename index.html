@@ -296,7 +296,7 @@ header {
   animation: fadeIn 0.8s ease 0.7s both;
 }
 
-/* Canvas Wrapper */
+/* Canvas */
 .canvas-wrapper {
   max-width: 1200px;
   margin: 0 auto 40px;
@@ -314,6 +314,9 @@ header {
     0 0 0 1px var(--glass-border),
     0 0 40px var(--accent-glow);
   transition: all 0.4s ease;
+  touch-action: none; /* Prevent default touch behaviors */
+  -webkit-user-select: none; /* Prevent text selection on iOS */
+  user-select: none;
 }
 
 .canvas:hover {
@@ -531,6 +534,9 @@ h2 {
   transition: all 0.2s ease;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  touch-action: none; /* Allow custom touch handling */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .canvas img:hover {
@@ -764,10 +770,21 @@ fileInput.addEventListener("change", function(e) {
 });
 
 /* ======================= */
-/* ПЕРЕТАСКИВАНИЕ + МАСШТАБ */
+/* ПЕРЕТАСКИВАНИЕ + МАСШТАБ (DESKTOP + MOBILE) */
 /* ======================= */
 
 function enableDrag(el) {
+  // Touch state variables
+  let initialDistance = 0;
+  let initialWidth = 0;
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let elementStartLeft = 0;
+  let elementStartTop = 0;
+  let isTouching = false;
+  let isPinching = false;
+
+  // ===== DESKTOP MOUSE SUPPORT =====
   el.onmousedown = function(e) {
     e.preventDefault();
     
@@ -790,6 +807,7 @@ function enableDrag(el) {
     }, {once: true});
   };
 
+  // Mouse wheel zoom (desktop)
   el.onwheel = function(e) {
     e.preventDefault();
     let w = parseFloat(el.style.width);
@@ -798,6 +816,101 @@ function enableDrag(el) {
     if (w > 400) w = 400;
     el.style.width = w + "px";
   };
+
+  // ===== MOBILE TOUCH SUPPORT =====
+  
+  // Calculate distance between two touch points
+  function getDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  // Get center point between two touches
+  function getCenter(touches) {
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2
+    };
+  }
+
+  el.addEventListener('touchstart', function(e) {
+    isTouching = true;
+
+    if (e.touches.length === 2) {
+      // Two fingers - pinch to zoom
+      e.preventDefault();
+      isPinching = true;
+      
+      initialDistance = getDistance(e.touches);
+      initialWidth = parseFloat(el.style.width) || 120;
+      
+    } else if (e.touches.length === 1) {
+      // One finger - drag
+      isPinching = false;
+      
+      const touch = e.touches[0];
+      const rect = el.getBoundingClientRect();
+      
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      elementStartLeft = el.offsetLeft;
+      elementStartTop = el.offsetTop;
+    }
+  }, {passive: false});
+
+  el.addEventListener('touchmove', function(e) {
+    if (!isTouching) return;
+
+    if (e.touches.length === 2 && isPinching) {
+      // Pinch to zoom
+      e.preventDefault();
+      
+      const currentDistance = getDistance(e.touches);
+      const scale = currentDistance / initialDistance;
+      
+      let newWidth = initialWidth * scale;
+      
+      // Clamp width
+      if (newWidth < 40) newWidth = 40;
+      if (newWidth > 400) newWidth = 400;
+      
+      el.style.width = newWidth + "px";
+      
+    } else if (e.touches.length === 1 && !isPinching) {
+      // Single finger drag
+      e.preventDefault();
+      
+      const touch = e.touches[0];
+      
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+      
+      el.style.left = (elementStartLeft + deltaX) + "px";
+      el.style.top = (elementStartTop + deltaY) + "px";
+    }
+  }, {passive: false});
+
+  el.addEventListener('touchend', function(e) {
+    if (e.touches.length === 0) {
+      isTouching = false;
+      isPinching = false;
+    } else if (e.touches.length === 1) {
+      // One finger released, update drag position for remaining finger
+      isPinching = false;
+      
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      elementStartLeft = el.offsetLeft;
+      elementStartTop = el.offsetTop;
+    }
+  }, {passive: false});
+
+  el.addEventListener('touchcancel', function(e) {
+    isTouching = false;
+    isPinching = false;
+  }, {passive: false});
 }
 
 /* ======================= */
