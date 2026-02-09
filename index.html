@@ -3,121 +3,526 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FOWOGES</title>
+<title>FOWOGES - Premium Outfit Builder</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-body{
-  margin:0;
-  font-family:'Poppins',sans-serif;
-  background:#0f0f0f;
-  color:white;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-header{
-  text-align:center;
-  padding:25px;
-  border-bottom:1px solid #1a1a1a;
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #14141f;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b0;
+  --accent: #6366f1;
+  --accent-glow: rgba(99, 102, 241, 0.3);
+  --canvas-bg: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.3);
 }
 
-.logo{
-  font-family:'Playfair Display',serif;
-  font-size:36px;
-  letter-spacing:8px;
+body.light-mode {
+  --bg-primary: #f5f5f7;
+  --bg-secondary: #ffffff;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --accent: #6366f1;
+  --accent-glow: rgba(99, 102, 241, 0.2);
+  --canvas-bg: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.1);
 }
 
-.nav{
-  display:flex;
-  justify-content:center;
-  gap:30px;
-  padding:15px;
-  border-bottom:1px solid #1a1a1a;
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background 0.4s ease, color 0.4s ease;
+  overflow-x: hidden;
 }
 
-.nav button{
-  background:none;
-  border:none;
-  color:#aaa;
-  font-size:14px;
-  cursor:pointer;
+/* Animated gradient background */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  animation: gradientMove 20s ease infinite;
+  pointer-events: none;
+  z-index: 0;
 }
 
-.nav button.active{
-  color:white;
-  font-weight:600;
+@keyframes gradientMove {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(10%, 10%); }
+  50% { transform: translate(5%, -5%); }
+  75% { transform: translate(-5%, 5%); }
 }
 
-.screen{
-  display:none;
-  padding:40px;
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
-.screen.active{
-  display:block;
+/* Header */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(20px);
+  background: var(--glass-bg);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 20px 0;
+  animation: slideDown 0.6s ease;
 }
 
-.hero{
-  height:60vh;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
-.hero h1{
-  font-family:'Playfair Display',serif;
-  font-size:60px;
-  margin:0;
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 30px;
 }
 
-.hero p{
-  margin-top:15px;
-  color:#aaa;
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  cursor: pointer;
+  transition: transform 0.3s ease;
 }
 
-/* Белый холст */
-.canvas{
-  width:100%;
-  height:60vh;
-  background:white;
-  border-radius:14px;
-  position:relative;
-  overflow:hidden;
-  margin-bottom:20px;
+.logo:hover {
+  transform: scale(1.05);
 }
 
-/* Галерея */
-.gallery{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-  gap:20px;
+.theme-toggle {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 50px;
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
-.outfit{
-  background:white;
-  height:350px;
-  border-radius:14px;
-  position:relative;
-  overflow:hidden;
+.theme-toggle:hover {
+  background: var(--glass-border);
+  transform: translateY(-2px);
 }
 
-/* Кнопки */
-.controls{
-  display:flex;
-  gap:15px;
-  flex-wrap:wrap;
+/* Navigation */
+.nav {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 30px 20px;
+  animation: fadeIn 0.8s ease 0.2s both;
 }
 
-button.primary{
-  padding:10px 18px;
-  background:white;
-  color:black;
-  border:none;
-  border-radius:8px;
-  font-weight:600;
-  cursor:pointer;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nav button {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  padding: 12px 28px;
+  border-radius: 50px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+
+.nav button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: var(--accent-glow);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+.nav button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.nav button:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px var(--accent-glow);
+}
+
+.nav button.active {
+  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 8px 25px var(--accent-glow);
+}
+
+.nav button span {
+  position: relative;
+  z-index: 1;
+}
+
+/* Screens */
+.screen {
+  display: none;
+  padding: 40px 20px;
+  animation: fadeInScale 0.5s ease;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.screen.active {
+  display: block;
+}
+
+/* Hero Section */
+.hero {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(48px, 8vw, 86px);
+  font-weight: 900;
+  margin: 0;
+  line-height: 1.1;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fadeIn 0.8s ease 0.3s both;
+}
+
+.hero p {
+  margin-top: 24px;
+  font-size: 20px;
+  color: var(--text-secondary);
+  font-weight: 300;
+  max-width: 600px;
+  animation: fadeIn 0.8s ease 0.5s both;
+}
+
+.hero-cta {
+  margin-top: 40px;
+  animation: fadeIn 0.8s ease 0.7s both;
+}
+
+/* Canvas */
+.canvas-wrapper {
+  max-width: 1200px;
+  margin: 0 auto 30px;
+}
+
+.canvas {
+  width: 100%;
+  aspect-ratio: 16/10;
+  background: var(--canvas-bg);
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 20px 60px var(--shadow),
+    0 0 0 1px var(--glass-border);
+  transition: all 0.4s ease;
+}
+
+.canvas:hover {
+  box-shadow: 
+    0 30px 80px var(--shadow),
+    0 0 0 1px var(--accent);
+}
+
+.canvas-empty-state {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #ccc;
+  pointer-events: none;
+}
+
+.canvas-empty-state svg {
+  width: 80px;
+  height: 80px;
+  opacity: 0.3;
+  margin-bottom: 16px;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+button.primary {
+  padding: 14px 28px;
+  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 20px var(--accent-glow);
+  position: relative;
+  overflow: hidden;
+}
+
+button.primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+button.primary:hover::before {
+  left: 100%;
+}
+
+button.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px var(--accent-glow);
+}
+
+button.primary:active {
+  transform: translateY(-1px);
+}
+
+button.secondary {
+  padding: 14px 28px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+button.secondary:hover {
+  background: var(--glass-border);
+  transform: translateY(-2px);
+}
+
+/* Gallery */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.outfit {
+  background: var(--canvas-bg);
+  aspect-ratio: 4/5;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 30px var(--shadow);
+}
+
+.outfit:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 50px var(--shadow);
+}
+
+.outfit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.4) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.outfit:hover::after {
+  opacity: 1;
+}
+
+/* Section Headers */
+h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 42px;
+  font-weight: 700;
+  margin-bottom: 32px;
+  text-align: center;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header-content {
+    padding: 0 20px;
+  }
+  
+  .logo {
+    font-size: 24px;
+    letter-spacing: 4px;
+  }
+  
+  .nav {
+    gap: 8px;
+    padding: 20px;
+  }
+  
+  .nav button {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  .controls {
+    flex-direction: column;
+  }
+  
+  button.primary,
+  button.secondary {
+    width: 100%;
+  }
+  
+  .gallery {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  h2 {
+    font-size: 32px;
+  }
+}
+
+/* Image styling */
+.canvas img {
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.canvas img:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Empty state */
+.empty-gallery {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-gallery svg {
+  width: 120px;
+  height: 120px;
+  opacity: 0.3;
+  margin-bottom: 24px;
+}
+
+.empty-gallery h3 {
+  font-size: 24px;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.empty-gallery p {
+  font-size: 16px;
 }
 </style>
 </head>
@@ -125,20 +530,37 @@ button.primary{
 <body>
 
 <header>
-  <div class="logo">FOWOGES</div>
+  <div class="header-content">
+    <div class="logo" onclick="switchScreen('home', document.querySelector('.nav button'))">FOWOGES</div>
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <span id="theme-icon">🌙</span>
+      <span id="theme-text">Dark</span>
+    </button>
+  </div>
 </header>
 
 <div class="nav">
-  <button onclick="switchScreen('home', this)" class="active">Главная</button>
-  <button onclick="switchScreen('create', this)">Создать</button>
-  <button onclick="switchScreen('looks', this)">Образы</button>
+  <button onclick="switchScreen('home', this)" class="active">
+    <span>Главная</span>
+  </button>
+  <button onclick="switchScreen('create', this)">
+    <span>Создать</span>
+  </button>
+  <button onclick="switchScreen('looks', this)">
+    <span>Образы</span>
+  </button>
 </div>
 
 <!-- Главная -->
 <div id="home" class="screen active">
   <div class="hero">
     <h1>Build Your Identity</h1>
-    <p>Create digital outfits and express your style</p>
+    <p>Create stunning digital outfits and express your unique style with our premium builder</p>
+    <div class="hero-cta">
+      <button class="primary" onclick="switchScreen('create', document.querySelectorAll('.nav button')[1])">
+        Начать создание
+      </button>
+    </div>
   </div>
 </div>
 
@@ -146,13 +568,32 @@ button.primary{
 <div id="create" class="screen">
   <h2>Создать образ</h2>
 
-  <div id="canvas" class="canvas"></div>
+  <div class="canvas-wrapper">
+    <div id="canvas" class="canvas">
+      <div class="canvas-empty-state" id="emptyState">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <p>Добавьте изображения для начала</p>
+      </div>
+    </div>
+  </div>
 
   <div class="controls">
-    <button class="primary" onclick="fileInput.click()">Добавить фото</button>
-    <button class="primary" onclick="openBgRemoval()">Удаление фона</button>
-    <button class="primary" onclick="saveOutfit()">Сохранить</button>
-    <button class="primary" onclick="clearCanvas()">Очистить</button>
+    <button class="primary" onclick="fileInput.click()">
+      📷 Добавить фото
+    </button>
+    <button class="primary" onclick="openBgRemoval()">
+      ✂️ Удаление фона
+    </button>
+    <button class="primary" onclick="saveOutfit()">
+      💾 Сохранить
+    </button>
+    <button class="secondary" onclick="clearCanvas()">
+      🗑️ Очистить
+    </button>
   </div>
 </div>
 
@@ -160,6 +601,16 @@ button.primary{
 <div id="looks" class="screen">
   <h2>Мои образы</h2>
   <div id="gallery" class="gallery"></div>
+  <div id="emptyGallery" class="empty-gallery" style="display: none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="3" width="7" height="7"></rect>
+      <rect x="14" y="3" width="7" height="7"></rect>
+      <rect x="14" y="14" width="7" height="7"></rect>
+      <rect x="3" y="14" width="7" height="7"></rect>
+    </svg>
+    <h3>Пока нет сохранённых образов</h3>
+    <p>Создайте свой первый образ, чтобы увидеть его здесь</p>
+  </div>
 </div>
 
 <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
@@ -171,36 +622,52 @@ button.primary{
 /* ======================= */
 
 let outfits = JSON.parse(localStorage.getItem("outfits")) || [];
-
 const canvas = document.getElementById("canvas");
 const gallery = document.getElementById("gallery");
 const fileInput = document.getElementById("fileInput");
+const emptyState = document.getElementById("emptyState");
+const emptyGallery = document.getElementById("emptyGallery");
+
+/* ======================= */
+/* THEME TOGGLE */
+/* ======================= */
+
+function toggleTheme() {
+  document.body.classList.toggle('light-mode');
+  const isLight = document.body.classList.contains('light-mode');
+  document.getElementById('theme-icon').textContent = isLight ? '☀️' : '🌙';
+  document.getElementById('theme-text').textContent = isLight ? 'Light' : 'Dark';
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+
+// Load saved theme
+if (localStorage.getItem('theme') === 'light') {
+  toggleTheme();
+}
 
 /* ======================= */
 /* НАВИГАЦИЯ */
 /* ======================= */
 
-function switchScreen(id, btn){
-
-  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+function switchScreen(id, btn) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 
-  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
-  if(btn) btn.classList.add("active");
+  document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
 }
 
 /* ======================= */
 /* ДОБАВЛЕНИЕ ФОТО */
 /* ======================= */
 
-fileInput.addEventListener("change", function(e){
+fileInput.addEventListener("change", function(e) {
+  if (emptyState) emptyState.style.display = 'none';
 
-  for(let file of e.target.files){
-
+  for (let file of e.target.files) {
     const reader = new FileReader();
 
-    reader.onload = function(event){
-
+    reader.onload = function(event) {
       const img = document.createElement("img");
       img.src = event.target.result;
       img.style.position = "absolute";
@@ -208,9 +675,16 @@ fileInput.addEventListener("change", function(e){
       img.style.top = "40px";
       img.style.width = "120px";
       img.style.cursor = "move";
+      img.style.opacity = "0";
 
       enableDrag(img);
       canvas.appendChild(img);
+
+      // Fade in animation
+      setTimeout(() => {
+        img.style.transition = "opacity 0.3s ease";
+        img.style.opacity = "1";
+      }, 10);
     };
 
     reader.readAsDataURL(file);
@@ -221,35 +695,35 @@ fileInput.addEventListener("change", function(e){
 /* ПЕРЕТАСКИВАНИЕ + МАСШТАБ */
 /* ======================= */
 
-function enableDrag(el){
-
-  el.onmousedown = function(e){
-
+function enableDrag(el) {
+  el.onmousedown = function(e) {
+    e.preventDefault();
+    
     let shiftX = e.clientX - el.offsetLeft;
     let shiftY = e.clientY - el.offsetTop;
 
-    function moveAt(pageX, pageY){
+    function moveAt(pageX, pageY) {
       el.style.left = pageX - shiftX + "px";
       el.style.top = pageY - shiftY + "px";
     }
 
-    function onMouseMove(e){
+    function onMouseMove(e) {
       moveAt(e.pageX, e.pageY);
     }
 
     document.addEventListener("mousemove", onMouseMove);
 
-    document.addEventListener("mouseup", function(){
+    document.addEventListener("mouseup", function() {
       document.removeEventListener("mousemove", onMouseMove);
-    }, {once:true});
+    }, {once: true});
   };
 
-  el.onwheel = function(e){
+  el.onwheel = function(e) {
     e.preventDefault();
     let w = parseFloat(el.style.width);
     w += e.deltaY < 0 ? 10 : -10;
-    if(w < 40) w = 40;
-    if(w > 400) w = 400;
+    if (w < 40) w = 40;
+    if (w > 400) w = 400;
     el.style.width = w + "px";
   };
 }
@@ -258,18 +732,17 @@ function enableDrag(el){
 /* СОХРАНЕНИЕ */
 /* ======================= */
 
-function saveOutfit(){
-
+function saveOutfit() {
   const imgs = canvas.querySelectorAll("img");
 
-  if(imgs.length === 0){
-    alert("Добавьте элементы перед сохранением");
+  if (imgs.length === 0) {
+    showNotification("⚠️ Добавьте элементы перед сохранением");
     return;
   }
 
   let newOutfit = [];
 
-  imgs.forEach(img=>{
+  imgs.forEach(img => {
     newOutfit.push({
       src: img.src,
       left: img.style.left,
@@ -282,36 +755,50 @@ function saveOutfit(){
   localStorage.setItem("outfits", JSON.stringify(outfits));
 
   renderGallery();
-  switchScreen("looks");
+  switchScreen("looks", document.querySelectorAll('.nav button')[2]);
 
-  alert("Образ сохранён");
+  showNotification("✅ Образ сохранён успешно!");
 }
 
 /* ======================= */
 /* ГАЛЕРЕЯ */
 /* ======================= */
 
-function renderGallery(){
-
+function renderGallery() {
   gallery.innerHTML = "";
 
-  outfits.forEach(outfit=>{
+  if (outfits.length === 0) {
+    emptyGallery.style.display = 'block';
+    return;
+  }
 
+  emptyGallery.style.display = 'none';
+
+  outfits.forEach((outfit, index) => {
     const box = document.createElement("div");
     box.className = "outfit";
+    box.style.opacity = "0";
+    box.style.transform = "translateY(20px)";
 
-    outfit.forEach(item=>{
+    outfit.forEach(item => {
       const img = document.createElement("img");
       img.src = item.src;
       img.style.position = "absolute";
       img.style.left = item.left;
       img.style.top = item.top;
       img.style.width = item.width;
-      enableDrag(img);
+      img.style.pointerEvents = "none";
       box.appendChild(img);
     });
 
     gallery.appendChild(box);
+
+    // Staggered animation
+    setTimeout(() => {
+      box.style.transition = "all 0.4s ease";
+      box.style.opacity = "1";
+      box.style.transform = "translateY(0)";
+    }, index * 50);
   });
 }
 
@@ -319,7 +806,7 @@ function renderGallery(){
 /* УДАЛЕНИЕ ФОНА */
 /* ======================= */
 
-function openBgRemoval(){
+function openBgRemoval() {
   window.open("https://www.remove.bg/", "_blank");
 }
 
@@ -327,8 +814,61 @@ function openBgRemoval(){
 /* ОЧИСТКА */
 /* ======================= */
 
-function clearCanvas(){
-  canvas.innerHTML = "";
+function clearCanvas() {
+  const imgs = canvas.querySelectorAll("img");
+  
+  imgs.forEach((img, i) => {
+    setTimeout(() => {
+      img.style.transition = "all 0.3s ease";
+      img.style.opacity = "0";
+      img.style.transform = "scale(0.8)";
+      
+      setTimeout(() => img.remove(), 300);
+    }, i * 50);
+  });
+
+  setTimeout(() => {
+    if (emptyState) emptyState.style.display = 'block';
+  }, imgs.length * 50 + 300);
+}
+
+/* ======================= */
+/* NOTIFICATION */
+/* ======================= */
+
+function showNotification(message) {
+  const notification = document.createElement('div');
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    padding: 16px 32px;
+    border-radius: 50px;
+    box-shadow: 0 8px 30px var(--shadow);
+    font-weight: 600;
+    z-index: 1000;
+    opacity: 0;
+    transition: all 0.3s ease;
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.opacity = '1';
+    notification.style.transform = 'translateX(-50%) translateY(0)';
+  }, 10);
+  
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateX(-50%) translateY(-20px)';
+    setTimeout(() => notification.remove(), 300);
+  }, 2500);
 }
 
 /* Авто-загрузка */
