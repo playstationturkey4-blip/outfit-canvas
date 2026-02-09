@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>FOWOGES - Premium Outfit Builder</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -53,6 +53,7 @@ body {
   color: var(--text-primary);
   transition: background 0.4s ease, color 0.4s ease;
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Animated purple gradient background */
@@ -296,7 +297,7 @@ header {
   animation: fadeIn 0.8s ease 0.7s both;
 }
 
-/* Canvas */
+/* Canvas Wrapper */
 .canvas-wrapper {
   max-width: 1200px;
   margin: 0 auto 40px;
@@ -314,8 +315,8 @@ header {
     0 0 0 1px var(--glass-border),
     0 0 40px var(--accent-glow);
   transition: all 0.4s ease;
-  touch-action: none; /* Prevent default touch behaviors */
-  -webkit-user-select: none; /* Prevent text selection on iOS */
+  touch-action: none;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -534,7 +535,7 @@ h2 {
   transition: all 0.2s ease;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  touch-action: none; /* Allow custom touch handling */
+  touch-action: none;
   -webkit-user-select: none;
   user-select: none;
 }
@@ -774,26 +775,35 @@ fileInput.addEventListener("change", function(e) {
 /* ======================= */
 
 function enableDrag(el) {
-  // Touch state variables
-  let initialDistance = 0;
-  let initialWidth = 0;
-  let touchStartX = 0;
-  let touchStartY = 0;
-  let elementStartLeft = 0;
-  let elementStartTop = 0;
-  let isTouching = false;
-  let isPinching = false;
+  // State variables for touch
+  let touchState = {
+    isTouching: false,
+    isPinching: false,
+    initialDistance: 0,
+    initialWidth: 0,
+    lastTouchX: 0,
+    lastTouchY: 0,
+    elementStartLeft: 0,
+    elementStartTop: 0
+  };
 
-  // ===== DESKTOP MOUSE SUPPORT =====
-  el.onmousedown = function(e) {
+  // Helper: Calculate distance between two touch points
+  function getTouchDistance(touch1, touch2) {
+    const dx = touch1.clientX - touch2.clientX;
+    const dy = touch1.clientY - touch2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  // ===== DESKTOP MOUSE EVENTS =====
+  el.addEventListener('mousedown', function(e) {
     e.preventDefault();
     
-    let shiftX = e.clientX - el.offsetLeft;
-    let shiftY = e.clientY - el.offsetTop;
+    const shiftX = e.clientX - el.offsetLeft;
+    const shiftY = e.clientY - el.offsetTop;
 
     function moveAt(pageX, pageY) {
-      el.style.left = pageX - shiftX + "px";
-      el.style.top = pageY - shiftY + "px";
+      el.style.left = (pageX - shiftX) + "px";
+      el.style.top = (pageY - shiftY) + "px";
     }
 
     function onMouseMove(e) {
@@ -805,111 +815,96 @@ function enableDrag(el) {
     document.addEventListener("mouseup", function() {
       document.removeEventListener("mousemove", onMouseMove);
     }, {once: true});
-  };
+  });
 
   // Mouse wheel zoom (desktop)
-  el.onwheel = function(e) {
+  el.addEventListener('wheel', function(e) {
     e.preventDefault();
-    let w = parseFloat(el.style.width);
+    let w = parseFloat(el.style.width) || 120;
     w += e.deltaY < 0 ? 10 : -10;
     if (w < 40) w = 40;
     if (w > 400) w = 400;
     el.style.width = w + "px";
-  };
+  }, {passive: false});
 
-  // ===== MOBILE TOUCH SUPPORT =====
+  // ===== MOBILE TOUCH EVENTS =====
   
-  // Calculate distance between two touch points
-  function getDistance(touches) {
-    const dx = touches[0].clientX - touches[1].clientX;
-    const dy = touches[0].clientY - touches[1].clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  }
-
-  // Get center point between two touches
-  function getCenter(touches) {
-    return {
-      x: (touches[0].clientX + touches[1].clientX) / 2,
-      y: (touches[0].clientY + touches[1].clientY) / 2
-    };
-  }
-
   el.addEventListener('touchstart', function(e) {
-    isTouching = true;
+    e.preventDefault();
+    touchState.isTouching = true;
 
     if (e.touches.length === 2) {
-      // Two fingers - pinch to zoom
-      e.preventDefault();
-      isPinching = true;
-      
-      initialDistance = getDistance(e.touches);
-      initialWidth = parseFloat(el.style.width) || 120;
+      // Two fingers - start pinch zoom
+      touchState.isPinching = true;
+      touchState.initialDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      touchState.initialWidth = parseFloat(el.style.width) || 120;
       
     } else if (e.touches.length === 1) {
-      // One finger - drag
-      isPinching = false;
+      // One finger - start drag
+      touchState.isPinching = false;
       
       const touch = e.touches[0];
-      const rect = el.getBoundingClientRect();
-      
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-      elementStartLeft = el.offsetLeft;
-      elementStartTop = el.offsetTop;
+      touchState.lastTouchX = touch.clientX;
+      touchState.lastTouchY = touch.clientY;
+      touchState.elementStartLeft = el.offsetLeft;
+      touchState.elementStartTop = el.offsetTop;
     }
   }, {passive: false});
 
   el.addEventListener('touchmove', function(e) {
-    if (!isTouching) return;
+    e.preventDefault();
+    
+    if (!touchState.isTouching) return;
 
-    if (e.touches.length === 2 && isPinching) {
-      // Pinch to zoom
-      e.preventDefault();
+    if (e.touches.length === 2 && touchState.isPinching) {
+      // Pinch to zoom with two fingers
+      const currentDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      const scaleFactor = currentDistance / touchState.initialDistance;
       
-      const currentDistance = getDistance(e.touches);
-      const scale = currentDistance / initialDistance;
+      let newWidth = touchState.initialWidth * scaleFactor;
       
-      let newWidth = initialWidth * scale;
-      
-      // Clamp width
+      // Clamp width between 40 and 400
       if (newWidth < 40) newWidth = 40;
       if (newWidth > 400) newWidth = 400;
       
       el.style.width = newWidth + "px";
       
-    } else if (e.touches.length === 1 && !isPinching) {
-      // Single finger drag
-      e.preventDefault();
-      
+    } else if (e.touches.length === 1 && !touchState.isPinching) {
+      // Drag with one finger
       const touch = e.touches[0];
       
-      const deltaX = touch.clientX - touchStartX;
-      const deltaY = touch.clientY - touchStartY;
+      const deltaX = touch.clientX - touchState.lastTouchX;
+      const deltaY = touch.clientY - touchState.lastTouchY;
       
-      el.style.left = (elementStartLeft + deltaX) + "px";
-      el.style.top = (elementStartTop + deltaY) + "px";
+      el.style.left = (touchState.elementStartLeft + deltaX) + "px";
+      el.style.top = (touchState.elementStartTop + deltaY) + "px";
     }
   }, {passive: false});
 
   el.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    
     if (e.touches.length === 0) {
-      isTouching = false;
-      isPinching = false;
+      // All fingers lifted
+      touchState.isTouching = false;
+      touchState.isPinching = false;
+      
     } else if (e.touches.length === 1) {
-      // One finger released, update drag position for remaining finger
-      isPinching = false;
+      // One finger released from pinch, continue with drag
+      touchState.isPinching = false;
       
       const touch = e.touches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-      elementStartLeft = el.offsetLeft;
-      elementStartTop = el.offsetTop;
+      touchState.lastTouchX = touch.clientX;
+      touchState.lastTouchY = touch.clientY;
+      touchState.elementStartLeft = el.offsetLeft;
+      touchState.elementStartTop = el.offsetTop;
     }
   }, {passive: false});
 
   el.addEventListener('touchcancel', function(e) {
-    isTouching = false;
-    isPinching = false;
+    e.preventDefault();
+    touchState.isTouching = false;
+    touchState.isPinching = false;
   }, {passive: false});
 }
 
@@ -991,9 +986,7 @@ function renderGallery() {
       const savedTop = parseFloat(item.top);
       const savedWidth_img = parseFloat(item.width);
 
-      // Calculate scale factor based on gallery card size
-      // Gallery cards are 16:10 aspect ratio, same as canvas
-      // We'll scale based on percentage of original canvas
+      // Calculate scale factor based on percentage of original canvas
       const leftPercent = (savedLeft / savedWidth) * 100;
       const topPercent = (savedTop / savedHeight) * 100;
       const widthPercent = (savedWidth_img / savedWidth) * 100;
