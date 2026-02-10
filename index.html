@@ -599,6 +599,13 @@ h2 {
   opacity: 0;
   transition: all 0.3s ease;
 }
+
+/* Selected image styling */
+.canvas img.selected {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.6), 0 0 30px rgba(139, 92, 246, 0.4);
+}
 </style>
 </head>
 
@@ -666,6 +673,9 @@ h2 {
     <button class="primary" onclick="saveOutfit()">
       💾 Сохранить
     </button>
+    <button class="secondary" onclick="deleteSelected()">
+      🗑️ Удалить выбранное
+    </button>
     <button class="secondary" onclick="clearCanvas()">
       🗑️ Очистить
     </button>
@@ -706,6 +716,9 @@ const emptyGallery = document.getElementById("emptyGallery");
 // Canvas reference dimensions for proportional scaling
 const CANVAS_REF_WIDTH = 1200;
 const CANVAS_REF_HEIGHT = 750;
+
+// Selection state
+let selectedImage = null;
 
 /* ======================= */
 /* THEME TOGGLE */
@@ -1038,6 +1051,8 @@ function clearCanvas() {
   setTimeout(() => {
     if (emptyState) emptyState.style.display = 'block';
   }, imgs.length * 50 + 300);
+  
+  selectedImage = null;
 }
 
 /* ======================= */
@@ -1068,6 +1083,7 @@ function showNotification(message) {
 /* ======================= */
 
 renderGallery();
+
 /* ======================= */
 /* ВСТАВКА КАРТИНКИ ЧЕРЕЗ CTRL+V */
 /* ======================= */
@@ -1121,6 +1137,10 @@ function addImageToCanvas(src) {
 
   // Удаление двойным кликом
   img.addEventListener("dblclick", function () {
+    if (selectedImage === img) {
+      selectedImage = null;
+    }
+    
     img.remove();
 
     if (canvas.querySelectorAll("img").length === 0) {
@@ -1137,6 +1157,65 @@ function addImageToCanvas(src) {
     img.style.opacity = "1";
   }, 10);
 }
+
+/* ======================= */
+/* SELECTION SYSTEM */
+/* ======================= */
+
+canvas.addEventListener('click', function(e) {
+  if (e.target.tagName === 'IMG') {
+    // Deselect previous
+    if (selectedImage) {
+      selectedImage.classList.remove('selected');
+    }
+    
+    // Select new
+    selectedImage = e.target;
+    selectedImage.classList.add('selected');
+  } else {
+    // Click on canvas background - deselect
+    if (selectedImage) {
+      selectedImage.classList.remove('selected');
+      selectedImage = null;
+    }
+  }
+});
+
+/* ======================= */
+/* DELETE SELECTED IMAGE */
+/* ======================= */
+
+function deleteSelected() {
+  if (!selectedImage) {
+    showNotification("⚠️ Сначала выберите изображение");
+    return;
+  }
+
+  selectedImage.style.transition = "all 0.3s ease";
+  selectedImage.style.opacity = "0";
+  selectedImage.style.transform = "scale(0.8)";
+  
+  setTimeout(() => {
+    selectedImage.remove();
+    selectedImage = null;
+
+    if (canvas.querySelectorAll("img").length === 0) {
+      emptyState.style.display = "block";
+    }
+    
+    showNotification("🗑️ Изображение удалено");
+  }, 300);
+}
+
+// Delete key support
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (selectedImage && document.getElementById('create').classList.contains('active')) {
+      e.preventDefault();
+      deleteSelected();
+    }
+  }
+});
 
 </script>
 
