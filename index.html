@@ -1068,6 +1068,75 @@ function showNotification(message) {
 /* ======================= */
 
 renderGallery();
+/* ======================= */
+/* ВСТАВКА КАРТИНКИ ЧЕРЕЗ CTRL+V */
+/* ======================= */
+
+document.addEventListener("paste", function (e) {
+  const items = e.clipboardData.items;
+
+  for (let item of items) {
+
+    // Если вставлена картинка
+    if (item.type.indexOf("image") !== -1) {
+      const file = item.getAsFile();
+      const reader = new FileReader();
+
+      reader.onload = function (event) {
+        addImageToCanvas(event.target.result);
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    // Если вставлена ссылка
+    if (item.type === "text/plain") {
+      item.getAsString(function (text) {
+        if (text.startsWith("http")) {
+          addImageToCanvas(text);
+        }
+      });
+    }
+  }
+});
+
+/* ======================= */
+/* ФУНКЦИЯ ДОБАВЛЕНИЯ КАРТИНКИ */
+/* ======================= */
+
+function addImageToCanvas(src) {
+
+  if (emptyState) emptyState.style.display = "none";
+
+  const img = document.createElement("img");
+  img.src = src;
+  img.style.position = "absolute";
+  img.style.left = "40px";
+  img.style.top = "40px";
+  img.style.width = "120px";
+  img.style.cursor = "move";
+  img.style.opacity = "0";
+
+  enableDrag(img);
+
+  // Удаление двойным кликом
+  img.addEventListener("dblclick", function () {
+    img.remove();
+
+    if (canvas.querySelectorAll("img").length === 0) {
+      emptyState.style.display = "block";
+    }
+
+    showNotification("🗑️ Картинка удалена");
+  });
+
+  canvas.appendChild(img);
+
+  setTimeout(() => {
+    img.style.transition = "opacity 0.3s ease";
+    img.style.opacity = "1";
+  }, 10);
+}
 
 </script>
 
